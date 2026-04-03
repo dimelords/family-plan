@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Familjeveckan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0f13;--surface:#16161d;--surface2:#1e1e28;--border:#2a2a38;
+  --accent:#c8f064;--accent2:#7b6fff;--text:#e8e8f0;--muted:#888898;--danger:#ff6f6f;
+  --fredrik:#c8f064;--camilla:#ff9de2;--emilia:#6fd4ff;--celvin:#ffb86c;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;padding:20px 16px 80px;max-width:480px;margin:0 auto;}
+
+/* HEADER */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.header h1{font-family:'DM Serif Display',serif;font-size:1.7rem;line-height:1;}
+.header h1 span{color:var(--accent);}
+.week-nav{display:flex;align-items:center;gap:8px;}
+.week-chip{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:4px 10px;letter-spacing:.06em;}
+.nav-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.nav-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* LEGEND */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* STATUS */
+.status-bar{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.status-dot.ok{background:var(--accent);}
+.status-dot.err{background:var(--danger);}
+
+/* DAY STRIP */
+.swipe-hint{text-align:center;font-size:11px;color:var(--muted);margin-bottom:6px;}
+.day-strip{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.day-strip::-webkit-scrollbar{display:none;}
+.day-btn{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all .16s;min-width:52px;user-select:none;}
+.day-btn .dname{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.day-btn .dnum{font-family:'DM Serif Display',serif;font-size:1.25rem;line-height:1;color:var(--text);}
+.day-btn .ddots{display:flex;gap:3px;margin-top:4px;min-height:6px;}
+.day-btn.active{border-color:var(--accent);background:rgba(200,240,100,.07);}
+.day-btn.active .dname{color:var(--accent);}
+.day-btn.weekend{opacity:.7;}
+
+/* DAY PANELS */
+.day-panel{display:none;}
+.day-panel.active{display:block;}
+.sec-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;}
+.add-btn{font-size:10px;font-weight:600;color:var(--accent);background:rgba(200,240,100,.1);border:1px solid rgba(200,240,100,.25);border-radius:6px;padding:3px 8px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.add-btn:hover{background:rgba(200,240,100,.18);}
+.events{display:flex;flex-direction:column;gap:6px;min-height:40px;}
+.empty-state{font-size:12px;color:var(--muted);padding:12px 0;font-style:italic;}
+.event{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:10px;border:1px solid var(--border);border-left:3px solid transparent;padding:9px 12px;}
+.ev-time{font-size:11px;color:var(--muted);min-width:44px;font-variant-numeric:tabular-nums;}
+.ev-content{flex:1;}
+.ev-who{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;opacity:.7;}
+.ev-what{font-size:13px;font-weight:500;}
+.ev-tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;flex-shrink:0;}
+.ev-del{font-size:14px;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px;background:none;border:none;font-family:inherit;flex-shrink:0;}
+.ev-del:hover{color:var(--danger);}
+.ev-fredrik{border-color:var(--fredrik);}
+.ev-camilla{border-color:var(--camilla);}
+.ev-emilia{border-color:var(--emilia);}
+.ev-celvin{border-color:var(--celvin);}
+.ev-gym{border-color:var(--accent2);background:rgba(123,111,255,.08);}
+.tag-gym{background:rgba(123,111,255,.2);color:var(--accent2);}
+.tag-skola{background:rgba(111,212,255,.15);color:var(--emilia);}
+.tag-vila{background:rgba(136,136,160,.1);color:var(--muted);}
+
+/* TABS */
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:20px 0 12px;}
+.tab-btn{flex:1;padding:9px 4px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);border:none;background:transparent;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.tab-btn.active{background:var(--surface2);color:var(--text);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;}
+
+/* TRAINING */
+.train-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.train-row:last-child{border-bottom:none;}
+.tr-day{min-width:58px;font-size:12px;font-weight:600;color:var(--muted);padding-top:2px;}
+.tr-day.gym-day{color:var(--accent);}
+.tr-body{flex:1;}
+.tr-type{font-weight:500;font-size:13px;}
+.tr-detail{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.tr-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;margin-top:2px;}
+.badge-gym{background:rgba(123,111,255,.2);color:var(--accent2);}
+.badge-rest{background:rgba(136,136,160,.1);color:var(--muted);}
+
+/* MEALS */
+.meal-day-block{padding:10px 0;border-bottom:1px solid var(--border);}
+.meal-day-block:last-child{border-bottom:none;}
+.meal-day-header{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.meal-day-header.gym-day{color:var(--accent);}
+.gym-badge{font-size:9px;font-weight:700;background:rgba(123,111,255,.2);color:var(--accent2);padding:1px 6px;border-radius:10px;}
+.meal-items{display:flex;flex-direction:column;gap:4px;}
+.meal-item{font-size:12px;display:flex;align-items:baseline;gap:4px;}
+.meal-item-inner{flex:1;}
+.ml{font-size:10px;font-weight:700;color:var(--accent);margin-right:4px;}
+.meal-del{font-size:12px;color:var(--muted);cursor:pointer;padding:1px 4px;border-radius:4px;background:none;border:none;font-family:inherit;flex-shrink:0;}
+.meal-del:hover{color:var(--danger);}
+
+/* PANTRY */
+.pantry-section{margin-bottom:14px;}
+.pantry-section-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.pantry-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:5px;font-size:12px;}
+.pantry-item.leftover{border-color:rgba(255,184,108,.35);background:rgba(255,184,108,.04);}
+.pantry-item-name{flex:1;}
+.pantry-item-date{font-size:10px;color:var(--muted);}
+.pantry-del{font-size:12px;color:var(--muted);cursor:pointer;padding:1px 4px;border-radius:4px;background:none;border:none;font-family:inherit;}
+.pantry-del:hover{color:var(--danger);}
+.leftover-badge{font-size:9px;font-weight:700;background:rgba(255,184,108,.2);color:var(--celvin);padding:1px 6px;border-radius:10px;flex-shrink:0;}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface2);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 20px 32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.modal h3{font-family:'DM Serif Display',serif;font-size:1.2rem;margin-bottom:16px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field select option{background:var(--bg);}
+.field textarea{resize:vertical;min-height:70px;}
+.modal-btns{display:flex;gap:8px;margin-top:16px;}
+.btn-primary{flex:1;padding:9px;background:var(--accent);color:#0f0f13;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-primary:disabled{opacity:.5;}
+.btn-secondary{flex:1;padding:9px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-ai{width:100%;padding:9px;background:rgba(123,111,255,.15);color:var(--accent2);border:1px solid rgba(123,111,255,.3);border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;}
+.btn-ai:disabled{opacity:.5;}
+
+/* MODE TOGGLE */
+.mode-toggle{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.mode-btn{flex:1;padding:8px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.mode-btn.active{background:var(--surface2);color:var(--text);}
+
+/* AI */
+.ai-suggestions{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.ai-suggestion{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s;}
+.ai-suggestion:hover{border-color:var(--accent);background:rgba(200,240,100,.05);}
+.ai-sug-label{font-size:10px;font-weight:700;color:var(--accent);margin-right:4px;}
+.ai-sug-text{font-size:12px;}
+.ai-sug-hint{font-size:10px;color:var(--muted);margin-top:2px;}
+.ai-thinking{font-size:12px;color:var(--muted);padding:12px 0;text-align:center;font-style:italic;}
+.ai-context-preview{font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.5;}
+.ai-context-preview strong{color:var(--text);font-weight:600;}
+
+/* SETTINGS BTN */
+.settings-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;position:fixed;bottom:16px;right:16px;z-index:50;}
+.settings-btn:hover{border-color:var(--accent);color:var(--accent);}
+.api-notice{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5;}
+
+/* BARCODE SCANNER */
+.scanner-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;}
+.scanner-wrap video{width:100%;height:100%;object-fit:cover;display:block;}
+.scanner-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.scanner-frame{width:65%;aspect-ratio:1.5;border:2px solid var(--accent);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);}
+.scanner-corners::before,.scanner-corners::after{content:'';position:absolute;width:20px;height:20px;border-color:var(--accent);border-style:solid;}
+.scanner-line{position:absolute;width:80%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:scanline 2s ease-in-out infinite;}
+@keyframes scanline{0%,100%{top:20%}50%{top:75%}}
+.scanned-list{display:flex;flex-direction:column;gap:5px;margin-top:10px;max-height:200px;overflow-y:auto;}
+.scanned-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:12px;}
+.scanned-item .si-name{flex:1;}
+.scanned-item .si-brand{font-size:10px;color:var(--muted);}
+.scanned-item .si-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;}
+.scanned-item .si-del:hover{color:var(--danger);}
+.scan-status{font-size:11px;color:var(--muted);text-align:center;padding:6px 0;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Familje<span>veckan</span></h1>
+  <div class="week-nav">
+    <button class="nav-btn" onclick="changeWeek(-1)">‹</button>
+    <div class="week-chip" id="weekChip">–</div>
+    <button class="nav-btn" onclick="changeWeek(1)">›</button>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot" style="background:var(--fredrik)"></div>Fredrik</div>
+  <div class="legend-item"><div class="dot" style="background:var(--camilla)"></div>Camilla</div>
+  <div class="legend-item"><div class="dot" style="background:var(--emilia)"></div>Emilia</div>
+  <div class="legend-item"><div class="dot" style="background:var(--celvin)"></div>Celvin</div>
+  <div class="legend-item"><div class="dot" style="background:var(--accent2)"></div>Gym</div>
+</div>
+
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Ansluter…</span>
+</div>
+
+<div class="swipe-hint">← Svep eller tryck en dag →</div>
+<div class="day-strip" id="dayStrip"></div>
+<div id="dayPanels"></div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tbtn-training" onclick="selectTab('training')">🏋️ Träning</button>
+  <button class="tab-btn" id="tbtn-meals" onclick="selectTab('meals')">🥩 Kostplan</button>
+  <button class="tab-btn" id="tbtn-pantry" onclick="selectTab('pantry')">🧊 Skafferi</button>
+</div>
+
+<!-- TRÄNING -->
+<div class="tab-panel active card" id="tab-training">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Fredrik · Styrka · 4 pass/vecka</div>
+  <div class="train-row"><div class="tr-day gym-day">Måndag</div><div class="tr-body"><div class="tr-type">Ben & Glutes</div><div class="tr-detail">Knäböj 4×6 · Benpress 3×10 · Rumänsk marklyft 3×10 · Leg curl 3×12</div></div><div class="tr-badge badge-gym">GYM</div></div>
+  <div class="train-row"><div class="tr-day">Tisdag</div><div class="tr-body"><div class="tr-type">Vila</div><div class="tr-detail">Stretching / promenad</div></div><div class="tr-badge badge-rest">VILA</div></div>
+  <div class="train-row"><div class="tr-day gym-day">Onsdag</div><div class="tr-body"><div class="tr-type">Rygg & Biceps</div><div class="tr-detail">Marklyft 4×5 · Chins 3×8 · Sittande rodd 3×10 · Hantelcurl 3×12</div></div><div class="tr-badge badge-gym">GYM</div></div>
+  <div class="train-row"><div class="tr-day">Torsdag</div><div class="tr-body"><div class="tr-type">Vila</div><div class="tr-detail">Stretching / promenad</div></div><div class="tr-badge badge-rest">VILA</div></div>
+  <div class="train-row"><div class="tr-day gym-day">Fredag</div><div class="tr-body"><div class="tr-type">Bröst & Triceps</div><div class="tr-detail">Bänkpress 4×6 · Lutande hantelpress 3×10 · Dips 3×10 · Tricepspress 3×12</div></div><div class="tr-badge badge-gym">GYM</div></div>
+  <div class="train-row"><div class="tr-day">Lördag</div><div class="tr-body"><div class="tr-type">Vila</div><div class="tr-detail">Fullständig vila</div></div><div class="tr-badge badge-rest">VILA</div></div>
+  <div class="train-row"><div class="tr-day gym-day">Söndag</div><div class="tr-body"><div class="tr-type">Axlar & Core</div><div class="tr-detail">Military press 4×8 · Laterals 3×12 · Plankan 3×45s · Cable crunch 3×15</div></div><div class="tr-badge badge-gym">GYM</div></div>
+</div>
+
+<!-- KOSTPLAN -->
+<div class="tab-panel card" id="tab-meals">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="font-size:11px;color:var(--muted);">~2500–2800 kcal · ~180g protein/dag</div>
+    <button class="add-btn" onclick="openMealModal()">+ Lägg till</button>
+  </div>
+  <div id="mealList"><div class="empty-state">Laddar…</div></div>
+</div>
+
+<!-- SKAFFERI -->
+<div class="tab-panel card" id="tab-pantry">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:11px;color:var(--muted);">Ingredienser & rester hemma</div>
+    <div style="display:flex;gap:6px;">
+      <button class="add-btn" onclick="openPantryAI()">✨ AI</button>
+      <button class="add-btn" onclick="openPantryManual()">+ Manuellt</button>
+    </div>
+  </div>
+  <div id="pantryList"><div class="empty-state">Laddar…</div></div>
+</div>
+
+<!-- MODAL: Event -->
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <h3>Ny aktivitet</h3>
+    <div class="field"><label>Person</label>
+      <select id="evPerson">
+        <option>Fredrik</option><option>Camilla</option><option>Emilia</option><option>Celvin</option>
+      </select>
+    </div>
+    <div class="field"><label>Aktivitet</label><input type="text" id="evTitle" placeholder="t.ex. 🚌 Buss → skolan"></div>
+    <div class="field"><label>Tid (frivillig)</label><input type="time" id="evTime"></div>
+    <div class="field"><label>Tagg</label>
+      <select id="evTag">
+        <option value="">Ingen</option><option value="SKOLA">SKOLA</option>
+        <option value="GYM">GYM</option><option value="VILA">VILA</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal('eventModal')">Avbryt</button>
+      <button class="btn-primary" id="evSaveBtn" onclick="saveEvent()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Meal -->
+<div class="modal-overlay" id="mealModal">
+  <div class="modal">
+    <h3>Ny måltid</h3>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeManual" onclick="setMealMode('manual')">✏️ Manuellt</button>
+      <button class="mode-btn" id="modeAI" onclick="setMealMode('ai')">✨ AI-förslag</button>
+    </div>
+    <div id="manualFields">
+      <div class="field"><label>Dag</label><input type="date" id="mealDate"></div>
+      <div class="field"><label>Måltid</label>
+        <select id="mealType">
+          <option value="F">Frukost</option><option value="L">Lunch</option><option value="M">Middag</option>
+        </select>
+      </div>
+      <div class="field"><label>Beskrivning</label><input type="text" id="mealDesc" placeholder="t.ex. Laxfilé + sötpotatis"></div>
+      <div class="modal-btns">
+        <button class="btn-secondary" onclick="closeModal('mealModal')">Avbryt</button>
+        <button class="btn-primary" id="mealSaveBtn" onclick="saveMeal()">Spara</button>
+      </div>
+    </div>
+    <div id="aiFields" style="display:none">
+      <div class="field"><label>Dag</label><input type="date" id="aiMealDate"></div>
+      <div class="field"><label>Vad är du sugen på? (frivilligt)</label>
+        <input type="text" id="aiPrompt" placeholder="t.ex. något lätt med fisk, använd resterna...">
+      </div>
+      <div id="aiContextPreview"></div>
+      <div id="aiResult"></div>
+      <div class="modal-btns" style="margin-top:12px">
+        <button class="btn-secondary" onclick="closeModal('mealModal')">Avbryt</button>
+        <button class="btn-primary" id="aiAskBtn" onclick="askAI()">Generera förslag</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Pantry manual -->
+<div class="modal-overlay" id="pantryManualModal">
+  <div class="modal">
+    <h3>Lägg till i skafferi</h3>
+    <div class="field"><label>Ingrediens / vara</label><input type="text" id="pantryItem" placeholder="t.ex. kycklingfilé 500g"></div>
+    <div class="field"><label>Typ</label>
+      <select id="pantryType">
+        <option value="false">🛒 Inhandlad ingrediens</option>
+        <option value="true">🍱 Rest från måltid</option>
+      </select>
+    </div>
+    <div class="field"><label>Bäst före (frivilligt)</label><input type="date" id="pantryExpires"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal('pantryManualModal')">Avbryt</button>
+      <button class="btn-primary" id="pantryManualSaveBtn" onclick="savePantryItem()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Pantry AI -->
+<div class="modal-overlay" id="pantryAIModal">
+  <div class="modal">
+    <h3>✨ AI – uppdatera skafferi</h3>
+
+    <!-- INPUT MODE TOGGLE -->
+    <div class="mode-toggle" style="margin-bottom:14px">
+      <button class="mode-btn active" id="pantryModeText" onclick="setPantryInputMode('text')">✏️ Text</button>
+      <button class="mode-btn" id="pantryModePhoto" onclick="setPantryInputMode('photo')">📷 Foto</button>
+      <button class="mode-btn" id="pantryModeBarcode" onclick="setPantryInputMode('barcode')">📸 Skanna</button>
+    </div>
+
+    <!-- TEXT MODE -->
+    <div id="pantryTextFields">
+      <div class="field"><label>Berätta vad som hänt</label>
+        <textarea id="pantryAIInput" placeholder="t.ex. Jag handlade idag: 500g kycklingfilé, lax, broccoli, quinoa, ägg. Från gårdagens middag är det köttfärssås kvar."></textarea>
+      </div>
+    </div>
+
+    <!-- PHOTO MODE -->
+    <div id="pantryPhotoFields" style="display:none">
+      <div class="field">
+        <label>Ta kort eller välj bild</label>
+        <input type="file" id="pantryPhoto" accept="image/*" capture="environment" onchange="onPhotoSelected(this)" style="display:none">
+        <div id="photoDropZone" onclick="document.getElementById('pantryPhoto').click()" style="
+          border:2px dashed var(--border);border-radius:12px;padding:28px;text-align:center;
+          cursor:pointer;transition:border .15s;background:var(--bg);">
+          <div style="font-size:28px;margin-bottom:8px">📷</div>
+          <div style="font-size:13px;color:var(--muted)">Tryck för att ta kort eller välja bild</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Kvitto, kassakvitto, varukorgen...</div>
+        </div>
+        <div id="photoPreview" style="display:none;margin-top:10px">
+          <img id="photoImg" style="width:100%;border-radius:10px;border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center">Bild vald – tryck Tolka bild</div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:0">
+        <label>Extra kommentar (frivilligt)</label>
+        <input type="text" id="pantryPhotoComment" placeholder="t.ex. rester från gårdagens pasta är också kvar">
+      </div>
+    </div>
+
+    <!-- BARCODE MODE -->
+    <div id="pantryBarcodeFields" style="display:none">
+      <div class="field">
+        <label>Skanna streckkod</label>
+        <div class="scanner-wrap" id="scannerWrap">
+          <video id="scannerVideo" autoplay playsinline muted></video>
+          <div class="scanner-overlay">
+            <div style="position:relative">
+              <div class="scanner-frame"></div>
+              <div class="scanner-line"></div>
+            </div>
+          </div>
+        </div>
+        <div class="scan-status" id="scanStatus">Rikta kameran mot streckkoden</div>
+      </div>
+      <div class="scanned-list" id="scannedList"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Skannade varor sparas när du trycker Spara alla</div>
+    </div>
+
+    <div id="pantryAIResult"></div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="btn-secondary" onclick="closeModal('pantryAIModal')">Avbryt</button>
+      <button class="btn-primary" id="pantryAIBtn" onclick="parsePantryAI()">Tolka & lägg till</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Settings -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3>⚙️ Inställningar</h3>
+    <div class="field">
+      <label>Anthropic API-nyckel</label>
+      <input type="password" id="anthropicKey" placeholder="sk-ant-…">
+      <div class="api-notice">Sparas lokalt i webbläsaren. Behövs för AI-funktioner.</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal('settingsModal')">Avbryt</button>
+      <button class="btn-primary" onclick="saveSettings()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<button class="settings-btn" onclick="openSettings()" title="Inställningar">⚙️</button>
+
+<script>
+const SB_URL = 'https://jbyhmiztcnaxocwdbgwi.supabase.co';
+const SB_KEY = 'sb_publishable_OOqqsCtOK6fHPOrHwAQzPQ_DfFtqkgz';
+const SB_HDR = { 'Content-Type':'application/json', 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Prefer':'return=minimal' };
+
+async function sbFetch(path, opts={}) {
+  const res = await fetch(SB_URL+'/rest/v1/'+path, {...opts, headers:{...SB_HDR,...(opts.headers||{})}});
+  if (!res.ok) { const t=await res.text(); throw new Error(t); }
+  if (res.status===204) return [];
+  return res.json();
+}
+
+async function claudeCall(system, user, maxTokens=600) {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) throw new Error('Ingen API-nyckel. Lägg till under ⚙️');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:maxTokens,system,messages:[{role:'user',content:user}]})
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || JSON.stringify(data));
+  return data.content[0].text.trim();
+}
+
+// State
+const _today = new Date();
+const _todayIdx = (_today.getDay()+6)%7;
+let currentDay = _todayIdx;
+let currentWeekStart = getMonday(new Date());
+let pendingEventDay = null;
+let allEvents=[], allMeals=[], allPantry=[], recentMeals=[];
+
+const dayNames=['Mån','Tis','Ons','Tor','Fre','Lör','Sön'];
+const fullDayNames=['Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag','Söndag'];
+const gymDays=[0,2,4,6];
+const gymLabels=['Ben & Glutes','','Rygg & Biceps','','Bröst & Triceps','','Axlar & Core'];
+const personClass={Fredrik:'ev-fredrik',Camilla:'ev-camilla',Emilia:'ev-emilia',Celvin:'ev-celvin'};
+const personColor={Fredrik:'var(--fredrik)',Camilla:'var(--camilla)',Emilia:'var(--emilia)',Celvin:'var(--celvin)'};
+const tagClass={SKOLA:'tag-skola',GYM:'tag-gym',VILA:'tag-vila'};
+
+function getMonday(d){const dt=new Date(d);dt.setHours(0,0,0,0);const day=dt.getDay();dt.setDate(dt.getDate()+(day===0?-6:1-day));return dt;}
+function dateStr(d){return d.toISOString().slice(0,10);}
+function weekDays(){return Array.from({length:7},(_,i)=>{const d=new Date(currentWeekStart);d.setDate(d.getDate()+i);return d;});}
+function weekNum(d){const jan4=new Date(d.getFullYear(),0,4);return Math.round((getMonday(d)-getMonday(jan4))/604800000)+1;}
+function setStatus(ok,msg){document.getElementById('statusDot').className='status-dot '+(ok?'ok':'err');document.getElementById('statusText').textContent=msg;}
+function changeWeek(dir){currentWeekStart.setDate(currentWeekStart.getDate()+dir*7);renderWeek();loadData();}
+
+function renderWeek(){
+  const days=weekDays();
+  document.getElementById('weekChip').textContent=`V.${weekNum(currentWeekStart)} · ${currentWeekStart.toLocaleString('sv-SE',{month:'short'})}`;
+  const strip=document.getElementById('dayStrip');
+  strip.innerHTML='';
+  days.forEach((d,i)=>{
+    const btn=document.createElement('div');
+    btn.className='day-btn'+(i>=5?' weekend':'')+(i===currentDay?' active':'');
+    btn.onclick=()=>selectDay(i);
+    btn.innerHTML=`<div class="dname">${dayNames[i]}</div><div class="dnum">${d.getDate()}</div><div class="ddots" id="dots-${i}"></div>`;
+    strip.appendChild(btn);
+  });
+  const panels=document.getElementById('dayPanels');
+  panels.innerHTML='';
+  days.forEach((d,i)=>{
+    const panel=document.createElement('div');
+    panel.className='day-panel'+(i===currentDay?' active':'');
+    panel.id=`panel-${i}`;
+    const isGym=gymDays.includes(i);
+    const lbl=d.toLocaleString('sv-SE',{weekday:'long',day:'numeric',month:'long'});
+    panel.innerHTML=`
+      <div class="sec-label">📅 ${lbl.charAt(0).toUpperCase()+lbl.slice(1)}<button class="add-btn" onclick="openEventModal(${i})">+ Lägg till</button></div>
+      ${isGym?`<div class="event ev-gym" style="margin-bottom:6px"><div class="ev-time">07:00</div><div class="ev-content"><div class="ev-who">Fredrik</div><div class="ev-what">🏋️ Gym – ${gymLabels[i]}</div></div><div class="ev-tag tag-gym">GYM</div></div>`:''}
+      <div class="events" id="events-${i}"><div class="empty-state">Laddar…</div></div>`;
+    panels.appendChild(panel);
+  });
+}
+
+function renderEvents(){
+  weekDays().forEach((d,i)=>{
+    const c=document.getElementById(`events-${i}`); if(!c)return;
+    const ds=dateStr(d);
+    const evs=allEvents.filter(e=>e.day===ds).sort((a,b)=>(a.time_start||'').localeCompare(b.time_start||''));
+    const dotsEl=document.getElementById(`dots-${i}`);
+    if(dotsEl){const p=[...new Set(evs.map(e=>e.person))];dotsEl.innerHTML=p.slice(0,4).map(p=>`<div class="dot" style="background:${personColor[p]||'var(--muted)'}"></div>`).join('');}
+    if(!evs.length){c.innerHTML='<div class="empty-state">Inga aktiviteter – tryck + för att lägga till</div>';return;}
+    c.innerHTML=evs.map(ev=>`<div class="event ${personClass[ev.person]||'ev-fredrik'}">
+      <div class="ev-time">${ev.time_start?ev.time_start.slice(0,5):'–'}</div>
+      <div class="ev-content"><div class="ev-who">${ev.person}</div><div class="ev-what">${ev.title}</div></div>
+      ${ev.tag?`<div class="ev-tag ${tagClass[ev.tag]||''}">${ev.tag}</div>`:''}
+      <button class="ev-del" onclick="deleteEvent('${ev.id}')">✕</button>
+    </div>`).join('');
+  });
+}
+
+function renderMeals(){
+  const days=weekDays();let html='';
+  days.forEach((d,i)=>{
+    const ds=dateStr(d),isGym=gymDays.includes(i);
+    const dm=allMeals.filter(m=>m.day===ds);
+    html+=`<div class="meal-day-block">
+      <div class="meal-day-header${isGym?' gym-day':''}">${fullDayNames[i]} ${isGym?'<span class="gym-badge">GYM</span>':''}</div>
+      <div class="meal-items">${dm.length?dm.map(m=>`<div class="meal-item"><div class="meal-item-inner"><span class="ml">${m.meal_type}</span>${m.description}</div><button class="meal-del" onclick="deleteMeal('${m.id}')">✕</button></div>`).join(''):'<div class="empty-state" style="padding:4px 0">Inga måltider planerade</div>'}</div>
+    </div>`;
+  });
+  document.getElementById('mealList').innerHTML=html;
+}
+
+function renderPantry(){
+  const leftovers=allPantry.filter(p=>p.is_leftover);
+  const ingredients=allPantry.filter(p=>!p.is_leftover);
+  let html='';
+  if(leftovers.length){
+    html+=`<div class="pantry-section"><div class="pantry-section-title"><span>🍱 Rester</span><span style="font-weight:400">${leftovers.length} st</span></div>`;
+    html+=leftovers.map(p=>`<div class="pantry-item leftover">
+      <span class="leftover-badge">REST</span>
+      <span class="pantry-item-name">${p.item}</span>
+      ${p.expires_date?`<span class="pantry-item-date">t.o.m. ${p.expires_date}</span>`:''}
+      <button class="pantry-del" onclick="deletePantry('${p.id}')">✕</button>
+    </div>`).join('')+'</div>';
+  }
+  if(ingredients.length){
+    html+=`<div class="pantry-section"><div class="pantry-section-title"><span>🛒 Hemma</span><span style="font-weight:400">${ingredients.length} varor</span></div>`;
+    html+=ingredients.map(p=>`<div class="pantry-item">
+      <span class="pantry-item-name">${p.item}</span>
+      ${p.expires_date?`<span class="pantry-item-date">t.o.m. ${p.expires_date}</span>`:''}
+      <button class="pantry-del" onclick="deletePantry('${p.id}')">✕</button>
+    </div>`).join('')+'</div>';
+  }
+  if(!leftovers.length&&!ingredients.length) html='<div class="empty-state">Skafferiet är tomt – lägg till ingredienser eller rester.</div>';
+  document.getElementById('pantryList').innerHTML=html;
+}
+
+async function loadData(){
+  const days=weekDays();
+  const from=dateStr(days[0]),to=dateStr(days[6]);
+  // Also load last 10 days of meals for AI context
+  const pastDate=new Date(); pastDate.setDate(pastDate.getDate()-10);
+  try{
+    const [evs,meals,pantry,past]=await Promise.all([
+      sbFetch(`schedule_events?day=gte.${from}&day=lte.${to}&order=time_start`),
+      sbFetch(`meal_plan?day=gte.${from}&day=lte.${to}&order=day,meal_type`),
+      sbFetch(`pantry?order=is_leftover.desc,added_date.desc`),
+      sbFetch(`meal_plan?day=gte.${dateStr(pastDate)}&day=lt.${from}&order=day,meal_type&limit=30`)
+    ]);
+    allEvents=evs; allMeals=meals; allPantry=pantry; recentMeals=past;
+    renderEvents(); renderMeals(); renderPantry();
+    setStatus(true,`Ansluten · ${pantry.filter(p=>p.is_leftover).length} rester · ${pantry.filter(p=>!p.is_leftover).length} ingredienser`);
+  }catch(e){
+    setStatus(false,'Fel: '+e.message);
+  }
+}
+
+// EVENTS
+function openEventModal(dayIdx){
+  pendingEventDay=dayIdx;
+  ['evTitle','evTime'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('evTag').value='';
+  document.getElementById('eventModal').classList.add('open');
+}
+async function saveEvent(){
+  const title=document.getElementById('evTitle').value.trim(); if(!title)return;
+  const btn=document.getElementById('evSaveBtn'); btn.disabled=true; btn.textContent='Sparar…';
+  try{
+    await sbFetch('schedule_events',{method:'POST',body:JSON.stringify({day:dateStr(weekDays()[pendingEventDay]),person:document.getElementById('evPerson').value,title,time_start:document.getElementById('evTime').value||null,tag:document.getElementById('evTag').value||null})});
+    closeModal('eventModal'); await loadData();
+  }catch(e){alert('Fel: '+e.message);}
+  btn.disabled=false; btn.textContent='Spara';
+}
+async function deleteEvent(id){try{await sbFetch(`schedule_events?id=eq.${id}`,{method:'DELETE'});await loadData();}catch(e){alert(e.message);}}
+
+// MEALS
+function openMealModal(){
+  const d=dateStr(weekDays()[currentDay]);
+  document.getElementById('mealDate').value=d;
+  document.getElementById('aiMealDate').value=d;
+  document.getElementById('mealDesc').value='';
+  document.getElementById('aiPrompt').value='';
+  document.getElementById('aiResult').innerHTML='';
+  setMealMode('manual');
+  updateAIContextPreview();
+  document.getElementById('mealModal').classList.add('open');
+}
+function setMealMode(mode){
+  document.getElementById('modeManual').classList.toggle('active',mode==='manual');
+  document.getElementById('modeAI').classList.toggle('active',mode==='ai');
+  document.getElementById('manualFields').style.display=mode==='manual'?'':'none';
+  document.getElementById('aiFields').style.display=mode==='ai'?'':'none';
+}
+function updateAIContextPreview(){
+  const leftovers=allPantry.filter(p=>p.is_leftover).map(p=>p.item);
+  const ingredients=allPantry.filter(p=>!p.is_leftover).map(p=>p.item);
+  const recent=[...recentMeals,...allMeals].slice(-6).map(m=>`${m.day} ${m.meal_type}: ${m.description}`);
+  let lines=[];
+  if(leftovers.length) lines.push(`<strong>Rester:</strong> ${leftovers.join(', ')}`);
+  if(ingredients.length) lines.push(`<strong>Hemma:</strong> ${ingredients.slice(0,6).join(', ')}${ingredients.length>6?'…':''}`);
+  if(recent.length) lines.push(`<strong>Senaste måltider:</strong> ${recent.slice(-3).map(r=>r.split(': ')[1]).join(' · ')}`);
+  document.getElementById('aiContextPreview').innerHTML=lines.length
+    ?`<div class="ai-context-preview">AI:n känner till:<br>${lines.join('<br>')}</div>`:'';
+}
+async function saveMeal(){
+  const desc=document.getElementById('mealDesc').value.trim(); if(!desc)return;
+  const btn=document.getElementById('mealSaveBtn'); btn.disabled=true; btn.textContent='Sparar…';
+  try{
+    await sbFetch('meal_plan',{method:'POST',body:JSON.stringify({day:document.getElementById('mealDate').value,meal_type:document.getElementById('mealType').value,description:desc})});
+    closeModal('mealModal'); await loadData();
+  }catch(e){alert('Fel: '+e.message);}
+  btn.disabled=false; btn.textContent='Spara';
+}
+async function deleteMeal(id){try{await sbFetch(`meal_plan?id=eq.${id}`,{method:'DELETE'});await loadData();}catch(e){alert(e.message);}}
+
+async function askAI(){
+  const btn=document.getElementById('aiAskBtn');
+  const resultEl=document.getElementById('aiResult');
+  btn.disabled=true; btn.textContent='Tänker…';
+  resultEl.innerHTML='<div class="ai-thinking">✨ Analyserar skafferi och måltidshistorik…</div>';
+
+  const targetDate=document.getElementById('aiMealDate').value;
+  const dayName=new Date(targetDate).toLocaleString('sv-SE',{weekday:'long'});
+  const userPrompt=document.getElementById('aiPrompt').value.trim();
+  const leftovers=allPantry.filter(p=>p.is_leftover).map(p=>p.item);
+  const ingredients=allPantry.filter(p=>!p.is_leftover).map(p=>p.item);
+  const allRecentMeals=[...recentMeals,...allMeals].sort((a,b)=>a.day.localeCompare(b.day));
+  const recentStr=allRecentMeals.slice(-14).map(m=>`${m.day} ${m.meal_type}: ${m.description}`).join('\n');
+
+  const system=`Du är kostrådgivare för Fredrik, aktiv man som styrketränar 4 dagar/vecka. Mål: ~180g protein/dag, ~2500-2800 kcal, varierande kost. Svara BARA med JSON utan markdown eller förklaringar.`;
+  const prompt=`Ge 3 måltidsförslag för ${dayName} (${targetDate}).
+${userPrompt?`Önskemål: ${userPrompt}`:''}
+${leftovers.length?`VIKTIGT – använd gärna dessa rester: ${leftovers.join(', ')}`:'' }
+${ingredients.length?`Hemma finns: ${ingredients.join(', ')}`:'' }
+${recentStr?`Senaste 14 måltider (undvik upprepning):\n${recentStr}`:''}
+
+Svara exakt som JSON-array (3 objekt, ett per måltid):
+[{"meal_type":"F","description":"..."},{"meal_type":"L","description":"..."},{"meal_type":"M","description":"..."}]
+F=Frukost, L=Lunch, M=Middag. Max 65 tecken per description.`;
+
+  try{
+    const text=await claudeCall(system,prompt,400);
+    const clean=text.replace(/```json|```/g,'').trim();
+    const suggestions=JSON.parse(clean);
+    const mealNames={F:'Frukost',L:'Lunch',M:'Middag'};
+    resultEl.innerHTML='<div class="ai-suggestions">'+
+      suggestions.map(s=>{
+        const usesRest=leftovers.some(l=>s.description.toLowerCase().includes(l.toLowerCase().split(' ')[0]));
+        return `<div class="ai-suggestion" onclick="selectAISuggestion('${s.meal_type}','${s.description.replace(/'/g,"\\'")}','${targetDate}')">
+          <div><span class="ai-sug-label">${mealNames[s.meal_type]}</span><span class="ai-sug-text">${s.description}</span>${usesRest?' 🍱':''}</div>
+          <div class="ai-sug-hint">Tryck för att spara →</div>
+        </div>`;
+      }).join('')+
+    '</div>';
+  }catch(e){
+    resultEl.innerHTML=`<div class="ai-thinking" style="color:var(--danger)">Fel: ${e.message}</div>`;
+  }
+  btn.disabled=false; btn.textContent='Generera förslag';
+}
+
+async function selectAISuggestion(mealType,description,day){
+  try{
+    await sbFetch('meal_plan',{method:'POST',body:JSON.stringify({day,meal_type:mealType,description})});
+    closeModal('mealModal'); await loadData();
+  }catch(e){alert('Fel: '+e.message);}
+}
+
+// PANTRY
+function openPantryManual(){
+  document.getElementById('pantryItem').value='';
+  document.getElementById('pantryExpires').value='';
+  document.getElementById('pantryManualModal').classList.add('open');
+}
+async function savePantryItem(){
+  const item=document.getElementById('pantryItem').value.trim(); if(!item)return;
+  const btn=document.getElementById('pantryManualSaveBtn'); btn.disabled=true; btn.textContent='Sparar…';
+  try{
+    await sbFetch('pantry',{method:'POST',body:JSON.stringify({item,is_leftover:document.getElementById('pantryType').value==='true',expires_date:document.getElementById('pantryExpires').value||null})});
+    closeModal('pantryManualModal'); await loadData();
+  }catch(e){alert('Fel: '+e.message);}
+  btn.disabled=false; btn.textContent='Spara';
+}
+async function deletePantry(id){try{await sbFetch(`pantry?id=eq.${id}`,{method:'DELETE'});await loadData();}catch(e){alert(e.message);}}
+
+let _pantryInputMode='text';
+let _photoBase64=null;
+let _photoMediaType='image/jpeg';
+
+function openPantryAI(){
+  document.getElementById('pantryAIInput').value='';
+  document.getElementById('pantryPhotoComment').value='';
+  document.getElementById('pantryAIResult').innerHTML='';
+  document.getElementById('pantryPhoto').value='';
+  document.getElementById('photoPreview').style.display='none';
+  document.getElementById('photoDropZone').style.display='';
+  document.getElementById('scannedList').innerHTML='';
+  document.getElementById('scanStatus').textContent='Rikta kameran mot streckkoden';
+  _photoBase64=null;
+  _scannedItems=[];
+  _lastBarcode=null;
+  setPantryInputMode('text');
+  document.getElementById('pantryAIModal').classList.add('open');
+}
+
+function setPantryInputMode(mode){
+  if(_pantryInputMode==='barcode' && mode!=='barcode') stopScanner();
+  _pantryInputMode=mode;
+  ['text','photo','barcode'].forEach(m=>{
+    document.getElementById('pantryMode'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('active',m===mode);
+    document.getElementById('pantry'+m.charAt(0).toUpperCase()+m.slice(1)+'Fields').style.display=m===mode?'':'none';
+  });
+  const labels={text:'Tolka & lägg till',photo:'Tolka bild',barcode:'Spara skannade'};
+  document.getElementById('pantryAIBtn').textContent=labels[mode];
+  if(mode==='barcode') startScanner();
+}
+
+function onPhotoSelected(input){
+  const file=input.files[0]; if(!file) return;
+  _photoMediaType=file.type||'image/jpeg';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const dataUrl=e.target.result;
+    _photoBase64=dataUrl.split(',')[1];
+    document.getElementById('photoImg').src=dataUrl;
+    document.getElementById('photoPreview').style.display='';
+    document.getElementById('photoDropZone').style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function parsePantryAI(){
+  const btn=document.getElementById('pantryAIBtn');
+  const resultEl=document.getElementById('pantryAIResult');
+  if(_pantryInputMode==='barcode'){
+    if(!_scannedItems.length){alert('Skanna minst en vara först');return;}
+    stopScanner();
+    btn.disabled=true; btn.textContent='Sparar…';
+    try{
+      for(const it of _scannedItems) await sbFetch('pantry',{method:'POST',body:JSON.stringify({item:it.item,is_leftover:false,expires_date:null})});
+      closeModal('pantryAIModal'); await loadData();
+    }catch(e){alert('Fel: '+e.message);}
+    btn.disabled=false; btn.textContent='Spara skannade';
+    return;
+  }
+  if(_pantryInputMode==='photo'){
+    if(!_photoBase64){alert('Välj en bild först');return;}
+    await parsePantryPhoto(btn,resultEl);
+  } else {
+    const input=document.getElementById('pantryAIInput').value.trim();
+    if(!input) return;
+    await parsePantryText(input,btn,resultEl);
+  }
+}
+
+async function parsePantryText(input,btn,resultEl){
+  btn.disabled=true; btn.textContent='Tolkar…';
+  resultEl.innerHTML='<div class="ai-thinking">✨ Tolkar vad du skrivit…</div>';
+  const today=dateStr(new Date());
+  const system='Du tolkar fritext om inköp och matrester och svarar BARA med JSON.';
+  const prompt=`Idag är det ${today}. Användaren skriver:\n"${input}"\n\nExtrahera alla nämnda ingredienser och rester som JSON-array:\n[{"item":"...","is_leftover":false,"expires_date":null}]\n- is_leftover=true om det är rester från en måltid\n- is_leftover=false om det är inhandlat\n- expires_date: ISO-datum om det nämns, annars null\nSvara BARA med JSON-array.`;
+  await runPantryAI(system,[{type:'text',text:prompt}],btn,resultEl);
+}
+
+async function parsePantryPhoto(btn,resultEl){
+  btn.disabled=true; btn.textContent='Analyserar bild…';
+  resultEl.innerHTML='<div class="ai-thinking">📷 Analyserar bilden…</div>';
+  const comment=document.getElementById('pantryPhotoComment').value.trim();
+  const today=dateStr(new Date());
+  const textContent=`Idag är det ${today}. Titta på bilden och identifiera alla matvaror/ingredienser du ser.\n${comment?`Extra info: ${comment}`:''}\n\nReturnera som JSON-array:\n[{"item":"...","is_leftover":false,"expires_date":null}]\n- is_leftover=true om det verkar vara rester\n- Inkludera ungefärlig mängd om synlig (t.ex. "Kycklingfilé 500g")\nSvara BARA med JSON-array.`;
+  const msgContent=[
+    {type:'image',source:{type:'base64',media_type:_photoMediaType,data:_photoBase64}},
+    {type:'text',text:textContent}
+  ];
+  await runPantryAI('Du tolkar bilder av matvaror och kvitton och svarar BARA med JSON.',msgContent,btn,resultEl);
+}
+
+async function runPantryAI(system,msgContent,btn,resultEl){
+  const key=localStorage.getItem('anthropic_key');
+  if(!key){alert('Lägg till din Anthropic API-nyckel under ⚙️');btn.disabled=false;return;}
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:600,system,messages:[{role:'user',content:msgContent}]})
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error?.message||JSON.stringify(data));
+    const clean=data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    const items=JSON.parse(clean);
+    resultEl.innerHTML=`<div style="font-size:12px;color:var(--muted);margin:10px 0 6px">Hittade ${items.length} poster – bekräfta:</div>`+
+      items.map(it=>`<div class="pantry-item${it.is_leftover?' leftover':''}" style="margin-bottom:4px">
+        ${it.is_leftover?'<span class="leftover-badge">REST</span>':''}
+        <span class="pantry-item-name">${it.item}</span>
+        ${it.expires_date?`<span class="pantry-item-date">t.o.m. ${it.expires_date}</span>`:''}
+      </div>`).join('');
+    btn.textContent='Spara alla'; btn.disabled=false;
+    btn.onclick=async()=>{
+      btn.disabled=true; btn.textContent='Sparar…';
+      try{
+        for(const it of items) await sbFetch('pantry',{method:'POST',body:JSON.stringify({item:it.item,is_leftover:!!it.is_leftover,expires_date:it.expires_date||null})});
+        closeModal('pantryAIModal'); await loadData();
+      }catch(e){alert('Fel: '+e.message);btn.disabled=false;btn.textContent='Spara alla';}
+    };
+  }catch(e){
+    resultEl.innerHTML=`<div class="ai-thinking" style="color:var(--danger)">Fel: ${e.message}</div>`;
+    btn.disabled=false; btn.textContent=_pantryInputMode==='photo'?'Tolka bild':'Tolka & lägg till';
+  }
+}
+
+
+// BARCODE SCANNER
+let _scannedItems=[];
+let _lastBarcode=null;
+let _scannerStream=null;
+let _scannerInterval=null;
+let _detector=null;
+
+async function startScanner(){
+  document.getElementById('scannedList').innerHTML='';
+  _scannedItems=[];
+  _lastBarcode=null;
+  const statusEl=document.getElementById('scanStatus');
+
+  if(!('BarcodeDetector' in window)){
+    statusEl.textContent='⚠️ Din webbläsare stöder inte BarcodeDetector. Prova Chrome på Android eller Safari iOS 17+.';
+    statusEl.style.color='var(--danger)';
+    return;
+  }
+  try{
+    _detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39']});
+    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    _scannerStream=stream;
+    const video=document.getElementById('scannerVideo');
+    video.srcObject=stream;
+    await video.play();
+    statusEl.textContent='Rikta mot streckkoden…';
+    statusEl.style.color='';
+    _scannerInterval=setInterval(()=>detectBarcode(video,statusEl),400);
+  }catch(e){
+    statusEl.textContent='Kameraåtkomst nekad: '+e.message;
+    statusEl.style.color='var(--danger)';
+  }
+}
+
+function stopScanner(){
+  if(_scannerInterval){clearInterval(_scannerInterval);_scannerInterval=null;}
+  if(_scannerStream){_scannerStream.getTracks().forEach(t=>t.stop());_scannerStream=null;}
+}
+
+async function detectBarcode(video,statusEl){
+  if(!_detector||video.readyState<2) return;
+  try{
+    const barcodes=await _detector.detect(video);
+    if(!barcodes.length) return;
+    const code=barcodes[0].rawValue;
+    if(code===_lastBarcode) return;
+    _lastBarcode=code;
+    statusEl.textContent='✅ Hittade: '+code+' – slår upp produkt…';
+    statusEl.style.color='var(--accent)';
+    await lookupBarcode(code,statusEl);
+  }catch(e){}
+}
+
+async function lookupBarcode(code,statusEl){
+  try{
+    const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const data=await res.json();
+    let name,brand='';
+    if(data.status===1&&data.product){
+      const p=data.product;
+      name=p.product_name_sv||p.product_name||p.generic_name||'Okänd produkt';
+      brand=p.brands||'';
+      const qty=p.quantity||'';
+      if(qty) name=name+' '+qty;
+    } else {
+      name='EAN '+code;
+    }
+    // Check not already added
+    if(_scannedItems.find(i=>i.code===code)){
+      statusEl.textContent='Redan tillagd – skanna nästa vara';
+      statusEl.style.color='var(--muted)';
+      setTimeout(()=>{_lastBarcode=null;statusEl.textContent='Rikta mot streckkoden…';statusEl.style.color='';},1500);
+      return;
+    }
+    _scannedItems.push({code,item:name,brand,is_leftover:false,expires_date:null});
+    renderScannedList();
+    statusEl.textContent='✅ '+name+' – skanna nästa vara';
+    setTimeout(()=>{_lastBarcode=null;statusEl.textContent='Rikta mot streckkoden…';statusEl.style.color='';},2000);
+  }catch(e){
+    statusEl.textContent='Fel vid uppslag: '+e.message;
+    statusEl.style.color='var(--danger)';
+    setTimeout(()=>{_lastBarcode=null;},2000);
+  }
+}
+
+function renderScannedList(){
+  const el=document.getElementById('scannedList');
+  el.innerHTML=_scannedItems.map((it,i)=>`
+    <div class="scanned-item">
+      <div style="flex:1">
+        <div class="si-name">${it.item}</div>
+        ${it.brand?`<div class="si-brand">${it.brand}</div>`:''}
+      </div>
+      <button class="si-del" onclick="removeScanned(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeScanned(i){_scannedItems.splice(i,1);renderScannedList();}
+
+// SETTINGS
+function openSettings(){document.getElementById('anthropicKey').value=localStorage.getItem('anthropic_key')||'';document.getElementById('settingsModal').classList.add('open');}
+function saveSettings(){const k=document.getElementById('anthropicKey').value.trim();k?localStorage.setItem('anthropic_key',k):localStorage.removeItem('anthropic_key');closeModal('settingsModal');}
+
+// UI
+function selectDay(idx){currentDay=idx;document.querySelectorAll('.day-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));document.querySelectorAll('.day-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));}
+function selectTab(name){['training','meals','pantry'].forEach(t=>{document.getElementById('tbtn-'+t).classList.toggle('active',t===name);document.getElementById('tab-'+t).classList.toggle('active',t===name);});}
+function closeModal(id){if(id==='pantryAIModal') stopScanner();document.getElementById(id).classList.remove('open');document.getElementById('pantryAIBtn').onclick=parsePantryAI;}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+let startX=null;
+document.getElementById('dayPanels').addEventListener('touchstart',e=>startX=e.touches[0].clientX,{passive:true});
+document.getElementById('dayPanels').addEventListener('touchend',e=>{if(!startX)return;const diff=startX-e.changedTouches[0].clientX;if(Math.abs(diff)>45)selectDay(diff>0?Math.min(currentDay+1,6):Math.max(currentDay-1,0));startX=null;},{passive:true});
+
+renderWeek();
+loadData();
+</script>
+</body>
+</html>
