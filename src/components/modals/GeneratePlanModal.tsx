@@ -136,7 +136,7 @@ Returnera JSON-array där day_offset=0 är startdatum, day_offset=1 nästa dag o
 Inkludera ALLA pass för alla 4 veckor. Returnera bara JSON-array.`
 
     try {
-      const text = await claudeCall(system, prompt, 3000)
+      const text = await claudeCall(system, prompt, 8192)
       setPreview(parseJson<AISession[]>(text))
     } catch (e) { setError((e as Error).message) }
     setGenerating(false)
@@ -220,9 +220,17 @@ Inkludera ALLA pass för alla 4 veckor. Returnera bara JSON-array.`
                 placeholder="T.ex. ont i knät, vill ha mer bröst, hemmaträning…" />
             </div>
             {error && <div className="ai-thinking" style={{ color: 'var(--danger)' }}>{error}</div>}
-            <button className="btn-primary" disabled={generating} onClick={generate}>
-              {generating ? '✨ Genererar 4-veckorsplan…' : '✨ Generera plan'}
-            </button>
+            {generating ? (
+              <div className="ai-generating">
+                <div className="spinner" />
+                <div className="ai-generating-text">✨ Claude skapar din 4-veckorsplan…</div>
+                <div className="ai-generating-hint">Det brukar ta 15–30 sekunder</div>
+              </div>
+            ) : (
+              <button className="btn-primary" onClick={generate}>
+                ✨ Generera plan
+              </button>
+            )}
           </>
         ) : (
           <>

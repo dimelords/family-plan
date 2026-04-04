@@ -9,9 +9,10 @@ interface Props {
   sessions: TrainingSession[]
   isToday: boolean
   onToggleComplete: (id: string, completed: boolean) => void
+  onExpand: (session: TrainingSession) => void
 }
 
-export function DayColumn({ date, label, sessions, isToday, onToggleComplete }: Props) {
+export function DayColumn({ date, label, sessions, isToday, onToggleComplete, onExpand }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: date })
 
   return (
@@ -21,7 +22,7 @@ export function DayColumn({ date, label, sessions, isToday, onToggleComplete }: 
         {sessions.length === 0
           ? <div className="day-col-empty">Vila</div>
           : sessions.map(s => (
-              <SessionCard key={s.id} session={s} onToggleComplete={onToggleComplete} />
+              <SessionCard key={s.id} session={s} onToggleComplete={onToggleComplete} onExpand={onExpand} />
             ))
         }
       </SortableContext>

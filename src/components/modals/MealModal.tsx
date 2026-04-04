@@ -31,6 +31,7 @@ export function MealModal({ open, familyId, day, dayIdx, pantry, recentMeals, cu
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [savedTypes, setSavedTypes] = useState<Set<string>>(new Set())
 
   if (!open || !day) return null
 
@@ -126,8 +127,8 @@ F=Frukost, L=Lunch, M=Middag. Max 65 tecken per description.`
   async function selectSuggestion(s: AISuggestion) {
     setSaving(true)
     await supabase.from('meal_plan').insert({ family_id: familyId, day: ds, meal_type: s.meal_type, description: s.description })
+    setSavedTypes(prev => new Set([...prev, s.meal_type]))
     setSaving(false)
-    onSaved()
   }
 
   return (
@@ -135,7 +136,7 @@ F=Frukost, L=Lunch, M=Middag. Max 65 tecken per description.`
       <div className="modal">
         <div className="modal-header">
           <div className="modal-title">Måltid – {dayName}</div>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={() => { if (savedTypes.size > 0) onSaved(); else onClose(); }}>✕</button>
         </div>
         <div className="mode-tabs">
           <button className={`mode-tab${mode === 'manual' ? ' active' : ''}`} onClick={() => setMode('manual')}>Manuell</button>
@@ -184,13 +185,22 @@ F=Frukost, L=Lunch, M=Middag. Max 65 tecken per description.`
                 {aiSuggestions.map(s => {
                   const usesRest = leftovers.some(l => s.description.toLowerCase().includes(l.item.toLowerCase().split(' ')[0]))
                   return (
-                    <div key={s.meal_type} className="ai-suggestion" onClick={() => !saving && selectSuggestion(s)}>
-                      <div>
-                        <span className="ai-sug-label">{MEAL_NAMES[s.meal_type]}</span>
+                    <div key={s.meal_type} className="ai-suggestion">
+                      <div className="ai-sug-body">
+                        <span className="ai-sug-label">{MEAL_NAMES[s.meal_type]}{usesRest ? ' 🍱' : ''}</span>
                         <span className="ai-sug-text">{s.description}</span>
-                        {usesRest && ' 🍱'}
                       </div>
-                      <div className="ai-sug-hint">Tryck för att spara →</div>
+                      {savedTypes.has(s.meal_type) ? (
+                        <span className="ai-sug-saved">✓ Tillagd</span>
+                      ) : (
+                        <button
+                          className="ai-sug-add-btn"
+                          disabled={saving}
+                          onClick={() => selectSuggestion(s)}
+                        >
+                          {saving ? '…' : '+ Lägg till'}
+                        </button>
+                      )}
                     </div>
                   )
                 })}

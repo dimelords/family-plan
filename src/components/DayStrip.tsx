@@ -1,4 +1,5 @@
 import { DAY_NAMES } from '../lib/constants'
+import { getHolidayName } from '../lib/holidays'
 import { dateStr } from '../lib/dates'
 import type { ScheduleEvent } from '../types/database'
 
@@ -17,11 +18,13 @@ export function DayStrip({ days, selectedDay, events, colorMap, onSelect }: Prop
       <div className="day-strip">
         {days.map((d, i) => {
           const ds = dateStr(d)
+          const holiday = getHolidayName(ds)
           const persons = [...new Set(events.filter(e => e.day === ds).map(e => e.person))]
           return (
             <div
               key={i}
-              className={`day-btn${i >= 5 ? ' weekend' : ''}${i === selectedDay ? ' active' : ''}`}
+              className={`day-btn${i >= 5 || holiday ? ' weekend' : ''}${i === selectedDay ? ' active' : ''}`}
+              title={holiday ?? undefined}
               onClick={() => onSelect(i)}
             >
               <div className="dname">{DAY_NAMES[i]}</div>

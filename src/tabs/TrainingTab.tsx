@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useTrainingPlan } from '../hooks/useTrainingPlan'
-import { WeekView } from '../components/training/WeekView'
 import { GeneratePlanModal } from '../components/modals/GeneratePlanModal'
-import type { FamilyMember, PersonPreferences } from '../types/database'
+import { SessionDetailModal } from '../components/training/SessionDetailModal'
+import { FULL_DAY_NAMES } from '../lib/constants'
+import { getHolidayName } from '../lib/holidays'
+import { dateStr } from '../lib/dates'
+import type { FamilyMember, PersonPreferences, TrainingSession } from '../types/database'
 
 interface Props {
   familyId: string
@@ -10,41 +14,102 @@ interface Props {
   prefs: PersonPreferences
 }
 
+function shortName(name: string): string {
+  return name.split('(')[0].trim()
+}
+
+function generateDays(start: string, end: string): string[] {
+  const days: string[] = []
+  const d = new Date(start + 'T12:00:00')
+  const endDate = new Date(end + 'T12:00:00')
+  while (d <= endDate) {
+    days.push(dateStr(d))
+    d.setDate(d.getDate() + 1)
+  }
+  return days
+}
+
+function dayLabel(ds: string): string {
+  const d = new Date(ds + 'T12:00:00')
+  const name = FULL_DAY_NAMES[(d.getDay() + 6) % 7]
+  return `${name} ${d.getDate()}/${d.getMonth() + 1}`
+}
+
 export function TrainingTab({ familyId, member, prefs }: Props) {
-  const { plan, sessions, loading, reload, moveSession, toggleComplete } = useTrainingPlan(familyId, member.name)
+  const { plan, sessions, loading, reload, toggleComplete } = useTrainingPlan(familyId, member.name)
   const [generateOpen, setGenerateOpen] = useState(false)
+  const [expandedSession, setExpandedSession] = useState<TrainingSession | null>(null)
+  const todayRef = useRef<HTMLDivElement>(null)
+  const today = dateStr(new Date())
+
+  useEffect(() => {
+    if (todayRef.current) {
+      todayRef.current.scrollIntoView({ behavior: 'instant', block: 'start' })
+    }
+  }, [plan])
 
   if (loading) return <div className="empty-state" style={{ padding: '24px 0' }}>Laddar träningsplan…</div>
 
+  const planDays = plan ? generateDays(plan.start_date, plan.end_date) : []
+
   return (
-    <div>
-      {plan ? (
-        <>
-          <div className="plan-header">
-            <div>
-              <div className="plan-header-title">Aktiv plan</div>
-              <div className="plan-header-dates">{plan.start_date} – {plan.end_date}</div>
-              {plan.goal_snapshot && <div className="plan-header-goal">{plan.goal_snapshot}</div>}
-            </div>
-            <button className="add-btn" onClick={() => setGenerateOpen(true)}>+ Ny plan</button>
-          </div>
-          <WeekView
-            plan={plan}
-            sessions={sessions}
-            onMove={moveSession}
-            onToggleComplete={toggleComplete}
-          />
-        </>
+    <div className="card">
+      <div className="sec-label">
+        Träningsplan
+        <button className="add-btn" onClick={() => setGenerateOpen(true)}>
+          {plan ? '+ Ny plan' : '+ Generera'}
+        </button>
+      </div>
+
+      {!plan ? (
+        <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
+          Ingen aktiv träningsplan. Skapa en med AI ovan.
+        </div>
       ) : (
-        <div className="no-plan-state">
-          <div className="no-plan-icon">🏋️</div>
-          <div className="no-plan-text">Ingen aktiv träningsplan</div>
-          <div className="no-plan-sub">
-            Låt AI skapa en personlig 4-veckorsplan baserad på dina mål och preferenser.
-          </div>
-          <button className="btn-primary" style={{ marginTop: 16 }} onClick={() => setGenerateOpen(true)}>
-            ✨ Generera träningsplan
-          </button>
+        <div className="plan-day-list">
+          {planDays.map(ds => {
+            const daySessions = sessions.filter(s => s.scheduled_date === ds)
+            const isToday = ds === today
+            const isPast = ds < today
+            const holiday = getHolidayName(ds)
+
+            return (
+              <div
+                key={ds}
+                ref={isToday ? todayRef : undefined}
+                className={`meal-day-block${isPast ? ' plan-day-past' : ''}`}
+              >
+                <div className={`meal-day-header${isToday ? ' plan-day-today' : ''}`}>
+                  {dayLabel(ds)}
+                  {isToday && <span className="today-badge">Idag</span>}
+                  {holiday && <span className="holiday-badge">{holiday}</span>}
+                </div>
+
+                {daySessions.length === 0 ? (
+                  <div className="plan-day-rest">Vila</div>
+                ) : (
+                  <div className="meal-items">
+                    {daySessions.map(s => (
+                      <div
+                        key={s.id}
+                        className={`meal-item plan-session-row${s.completed ? ' completed' : ''}`}
+                        onClick={() => setExpandedSession(s)}
+                      >
+                        <div className="meal-item-inner">
+                          <span className="ml">{s.workout_type}</span>
+                          {s.exercises.slice(0, 3).map(e => shortName(e.name)).join(' · ')}
+                          {s.exercises.length > 3 && ` +${s.exercises.length - 3}`}
+                        </div>
+                        <span className={`plan-check${s.completed ? ' done' : ''}`}>
+                          {s.completed ? '✓' : '○'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -57,6 +122,15 @@ export function TrainingTab({ familyId, member, prefs }: Props) {
         onClose={() => setGenerateOpen(false)}
         onSaved={() => { setGenerateOpen(false); reload() }}
       />
+
+      {expandedSession && createPortal(
+        <SessionDetailModal
+          session={expandedSession}
+          onClose={() => setExpandedSession(null)}
+          onToggleComplete={(id, completed) => { toggleComplete(id, completed); setExpandedSession(null) }}
+        />,
+        document.body,
+      )}
     </div>
   )
 }

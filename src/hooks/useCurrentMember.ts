@@ -32,11 +32,20 @@ export function useCurrentMember(familyId: string | null, members: FamilyMember[
 
   async function savePrefs(update: Partial<PersonPreferences>) {
     if (!memberId || !familyId) return
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('person_preferences')
-      .upsert({ family_id: familyId, family_member_id: memberId, ...update })
+      .upsert(
+        { family_id: familyId, family_member_id: memberId, ...update },
+        { onConflict: 'family_member_id' },
+      )
       .select()
       .single()
+    if (error) {
+      console.error('[savePrefs] Supabase error:', error)
+      // Surface the error so it's not silently swallowed
+      alert('Kunde inte spara inställningar: ' + error.message)
+      return
+    }
     setPrefs(data)
   }
 

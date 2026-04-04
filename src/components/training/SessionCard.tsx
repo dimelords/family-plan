@@ -5,9 +5,15 @@ import type { TrainingSession } from '../../types/database'
 interface Props {
   session: TrainingSession
   onToggleComplete: (id: string, completed: boolean) => void
+  onExpand: (session: TrainingSession) => void
 }
 
-export function SessionCard({ session, onToggleComplete }: Props) {
+// Strip parenthetical equipment info for compact display
+function shortName(name: string): string {
+  return name.split('(')[0].trim()
+}
+
+export function SessionCard({ session, onToggleComplete, onExpand }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: session.id,
   })
@@ -15,27 +21,38 @@ export function SessionCard({ session, onToggleComplete }: Props) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.35 : 1,
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`session-card${session.completed ? ' completed' : ''}`}>
-      <div className="session-drag-handle" {...listeners} {...attributes}>⠿</div>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`session-card${session.completed ? ' completed' : ''}`}
+      onClick={() => onExpand(session)}
+    >
+      <div className="session-drag-handle" {...listeners} {...attributes}
+        onClick={e => e.stopPropagation()}>⠿</div>
       <div className="session-body">
         <div className="session-type">{session.workout_type}</div>
         <div className="session-exercises">
           {session.exercises.slice(0, 3).map((e, i) => (
-            <span key={i} className="session-ex">{e.name}</span>
+            <div key={i} className="session-ex-row">
+              <span className="session-ex-name">{shortName(e.name)}</span>
+              <span className="session-ex-sets">{e.sets}×{e.reps}</span>
+            </div>
           ))}
           {session.exercises.length > 3 && (
-            <span className="session-ex muted">+{session.exercises.length - 3}</span>
+            <div className="session-ex-row muted">
+              <span className="session-ex-name">+{session.exercises.length - 3} övningar till</span>
+            </div>
           )}
         </div>
-        {session.notes && <div className="session-notes">{session.notes}</div>}
       </div>
       <button
         className={`session-check${session.completed ? ' done' : ''}`}
-        onClick={() => onToggleComplete(session.id, !session.completed)}
+        onClick={e => { e.stopPropagation(); onToggleComplete(session.id, !session.completed) }}
+        title={session.completed ? 'Markera ej klar' : 'Markera klar'}
       >
         {session.completed ? '✓' : '○'}
       </button>

@@ -15,6 +15,7 @@ interface Props {
   sessions: TrainingSession[]
   onMove: (sessionId: string, newDate: string) => void
   onToggleComplete: (id: string, completed: boolean) => void
+  onExpand: (session: TrainingSession) => void
 }
 
 function getWeeks(plan: TrainingPlan): Date[][] {
@@ -32,7 +33,7 @@ function getWeeks(plan: TrainingPlan): Date[][] {
   return weeks
 }
 
-export function WeekView({ plan, sessions, onMove, onToggleComplete }: Props) {
+export function WeekView({ plan, sessions, onMove, onToggleComplete, onExpand }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [currentWeek, setCurrentWeek] = useState(0)
 
@@ -119,10 +120,11 @@ export function WeekView({ plan, sessions, onMove, onToggleComplete }: Props) {
               <DayColumn
                 key={ds}
                 date={ds}
-                label={`${DAY_NAMES[i]} ${d.getDate()}`}
+                label={`${DAY_NAMES[(d.getDay() + 6) % 7]} ${d.getDate()}`}
                 sessions={sessions.filter(s => s.scheduled_date === ds)}
                 isToday={ds === today}
                 onToggleComplete={onToggleComplete}
+                onExpand={onExpand}
               />
             )
           })}
@@ -130,10 +132,11 @@ export function WeekView({ plan, sessions, onMove, onToggleComplete }: Props) {
 
         <DragOverlay>
           {activeSession && (
-            <SessionCard session={activeSession} onToggleComplete={() => {}} />
+            <SessionCard session={activeSession} onToggleComplete={() => {}} onExpand={() => {}} />
           )}
         </DragOverlay>
       </DndContext>
+
     </div>
   )
 }
