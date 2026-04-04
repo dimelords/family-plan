@@ -1,4 +1,4 @@
-# Familjeveckan 📅
+# Family Planning 📅
 
 A mobile-first family planning dashboard for Fredrik, Camilla, Emilia och Celvin.
 Single-file web app — open `index.html` in a browser and you're done.
