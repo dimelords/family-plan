@@ -36,15 +36,15 @@ export function SessionCard({ session, onToggleComplete, onExpand }: Props) {
       <div className="session-body">
         <div className="session-type">{session.workout_type}</div>
         <div className="session-exercises">
-          {((session.exercises as unknown) as Exercise[]).slice(0, 3).map((e: Exercise, i: number) => (
+          {((session.exercises ?? []) as unknown as Exercise[]).slice(0, 3).map((e: Exercise, i: number) => (
             <div key={i} className="session-ex-row">
               <span className="session-ex-name">{shortName(e.name)}</span>
               <span className="session-ex-sets">{e.sets}×{e.reps}</span>
             </div>
           ))}
-          {session.exercises.length > 3 && (
+          {((session.exercises ?? []) as unknown as Exercise[]).length > 3 && (
             <div className="session-ex-row muted">
-              <span className="session-ex-name">+{session.exercises.length - 3} övningar till</span>
+              <span className="session-ex-name">+{((session.exercises ?? []) as unknown as Exercise[]).length - 3} övningar till</span>
             </div>
           )}
         </div>
