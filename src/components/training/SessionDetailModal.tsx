@@ -36,12 +36,6 @@ export function SessionDetailModal({ session, onClose, onToggleComplete }: Props
     return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [])
 
-  const weekNumber = (() => {
-    const d = new Date(session.scheduled_date)
-    // crude: just use day of month to guess "Vecka N" from notes
-    return null
-  })()
-
   return (
     <div className="session-detail-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="session-detail-sheet">

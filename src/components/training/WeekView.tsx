@@ -114,7 +114,7 @@ export function WeekView({ plan, sessions, onMove, onToggleComplete, onExpand }:
         onDragEnd={handleDragEnd}
       >
         <div className="day-columns">
-          {weekDays.map((d, i) => {
+          {weekDays.map((d) => {
             const ds = dateStr(d)
             return (
               <DayColumn
