@@ -97,7 +97,7 @@ export function TrainingTab({ familyId, member, prefs }: Props) {
                       >
                         <div className="meal-item-inner">
                           <span className="ml">{s.workout_type}</span>
-                          {(s.exercises as Exercise[]).slice(0, 3).map((e: Exercise) => shortName(e.name)).join(' · ')}
+                          {((s.exercises as unknown) as Exercise[]).slice(0, 3).map((e: Exercise) => shortName(e.name)).join(' · ')}
                           {s.exercises.length > 3 && ` +${s.exercises.length - 3}`}
                         </div>
                         <span className={`plan-check${s.completed ? ' done' : ''}`}>

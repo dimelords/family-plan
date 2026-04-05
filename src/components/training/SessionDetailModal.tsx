@@ -58,7 +58,7 @@ export function SessionDetailModal({ session, onClose, onToggleComplete }: Props
 
         {/* Exercise list */}
         <div className="session-detail-exercises">
-          {(session.exercises as Exercise[]).map((e: Exercise, i: number) => (
+          {((session.exercises as unknown) as Exercise[]).map((e: Exercise, i: number) => (
             <div key={i} className="session-detail-ex">
               <div className="session-detail-ex-header">
                 <span className="session-detail-ex-num">{i + 1}</span>

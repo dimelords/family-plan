@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { claudeCall, parseJson, getApiKey } from '../../lib/claude'
 import { dateStr } from '../../lib/dates'
 import { FULL_DAY_NAMES } from '../../lib/constants'
-import type { PersonPreferences, TrainingPlan, TrainingSession, Exercise } from '../../types/database'
+import type { PersonPreferences, TrainingPlan, Exercise } from '../../types/database'
 
 interface Props {
   open: boolean
