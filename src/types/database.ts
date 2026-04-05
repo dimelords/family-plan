@@ -1,140 +1,253 @@
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export interface Exercise { name: string; sets: number; reps: string; notes?: string }
-
-export interface Database {
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
+      body_log: {
+        Row: {
+          arm_cm: number | null
+          chest_cm: number | null
+          created_at: string
+          estimated_bf_pct: number | null
+          family_id: string
+          hip_cm: number | null
+          id: string
+          logged_at: string
+          member_name: string
+          neck_cm: number | null
+          notes: string | null
+          thigh_cm: number | null
+          waist_cm: number | null
+          weight_kg: number | null
+        }
+        Insert: {
+          arm_cm?: number | null
+          chest_cm?: number | null
+          created_at?: string
+          estimated_bf_pct?: number | null
+          family_id: string
+          hip_cm?: number | null
+          id?: string
+          logged_at?: string
+          member_name: string
+          neck_cm?: number | null
+          notes?: string | null
+          thigh_cm?: number | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Update: {
+          arm_cm?: number | null
+          chest_cm?: number | null
+          created_at?: string
+          estimated_bf_pct?: number | null
+          family_id?: string
+          hip_cm?: number | null
+          id?: string
+          logged_at?: string
+          member_name?: string
+          neck_cm?: number | null
+          notes?: string | null
+          thigh_cm?: number | null
+          waist_cm?: number | null
+          weight_kg?: number | null
+        }
+        Relationships: [{ foreignKeyName: "body_log_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
+      }
       families: {
-        Row: { id: string; name: string; created_at: string }
-        Insert: { id?: string; name: string; created_at?: string }
-        Update: { name?: string }
+        Row: { created_at: string; id: string; name: string }
+        Insert: { created_at?: string; id?: string; name: string }
+        Update: { created_at?: string; id?: string; name?: string }
         Relationships: []
+      }
+      family_invitations: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          family_id: string
+          id: string
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          family_id: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          family_id?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [{ foreignKeyName: "family_invitations_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
       }
       family_members: {
-        Row: { id: string; family_id: string; user_id: string | null; name: string; color: string; role: 'owner' | 'member'; created_at: string }
-        Insert: { id?: string; family_id: string; user_id?: string | null; name: string; color?: string; role?: 'owner' | 'member' }
-        Update: { name?: string; color?: string; role?: 'owner' | 'member'; user_id?: string | null }
-        Relationships: []
-      }
-      schedule_events: {
-        Row: { id: string; family_id: string; day: string; person: string; title: string; time_start: string | null; tag: string | null }
-        Insert: { id?: string; family_id: string; day: string; person: string; title: string; time_start?: string | null; tag?: string | null }
-        Update: { day?: string; person?: string; title?: string; time_start?: string | null; tag?: string | null }
-        Relationships: []
+        Row: {
+          color: string
+          created_at: string
+          family_id: string
+          id: string
+          name: string
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          family_id: string
+          id?: string
+          name: string
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          family_id?: string
+          id?: string
+          name?: string
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [{ foreignKeyName: "family_members_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
       }
       meal_plan: {
-        Row: { id: string; family_id: string; day: string; meal_type: string; description: string }
-        Insert: { id?: string; family_id: string; day: string; meal_type: string; description: string }
-        Update: { day?: string; meal_type?: string; description?: string }
-        Relationships: []
+        Row: { created_at: string | null; day: string; description: string; family_id: string; id: string; meal_type: string }
+        Insert: { created_at?: string | null; day: string; description: string; family_id: string; id?: string; meal_type: string }
+        Update: { created_at?: string | null; day?: string; description?: string; family_id?: string; id?: string; meal_type?: string }
+        Relationships: [{ foreignKeyName: "meal_plan_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
       }
       pantry: {
-        Row: { id: string; family_id: string; item: string; is_leftover: boolean; expires_date: string | null; added_date: string }
-        Insert: { id?: string; family_id: string; item: string; is_leftover?: boolean; expires_date?: string | null; added_date?: string }
-        Update: { item?: string; is_leftover?: boolean; expires_date?: string | null }
-        Relationships: []
+        Row: { added_date: string | null; created_at: string | null; expires_date: string | null; family_id: string; id: string; is_leftover: boolean | null; item: string }
+        Insert: { added_date?: string | null; created_at?: string | null; expires_date?: string | null; family_id: string; id?: string; is_leftover?: boolean | null; item: string }
+        Update: { added_date?: string | null; created_at?: string | null; expires_date?: string | null; family_id?: string; id?: string; is_leftover?: boolean | null; item?: string }
+        Relationships: [{ foreignKeyName: "pantry_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
       }
       person_preferences: {
         Row: {
-          id: string; family_id: string; family_member_id: string
-          date_of_birth: string | null; height_cm: number | null
-          gender: 'male' | 'female' | 'other' | null
-          training_goal: 'muscle_gain' | 'weight_loss' | 'endurance' | 'general_fitness' | null
-          training_goals: string[]
-          meal_goal: 'weight_loss' | 'muscle_gain' | 'maintenance' | null
+          created_at: string
+          date_of_birth: string | null
+          enable_body_tracking: boolean
+          enable_nutrition_ai: boolean
+          enable_training: boolean
+          experience_level: string | null
+          family_id: string
+          family_member_id: string
+          gender: string | null
+          height_cm: number | null
+          id: string
+          meal_goal: string | null
           meal_goals: string[]
-          experience_level: 'beginner' | 'intermediate' | 'advanced' | null
+          onboarding_completed: boolean
           preferred_training_days: number[]
-          enable_training: boolean; enable_nutrition_ai: boolean; enable_body_tracking: boolean
-          onboarding_completed: boolean; created_at: string; updated_at: string
+          training_goal: string | null
+          training_goals: string[]
+          updated_at: string
         }
         Insert: {
-          id?: string; family_id: string; family_member_id: string
-          date_of_birth?: string | null; height_cm?: number | null
-          gender?: 'male' | 'female' | 'other' | null
-          training_goal?: 'muscle_gain' | 'weight_loss' | 'endurance' | 'general_fitness' | null
-          training_goals?: string[]
-          meal_goal?: 'weight_loss' | 'muscle_gain' | 'maintenance' | null
+          created_at?: string
+          date_of_birth?: string | null
+          enable_body_tracking?: boolean
+          enable_nutrition_ai?: boolean
+          enable_training?: boolean
+          experience_level?: string | null
+          family_id: string
+          family_member_id: string
+          gender?: string | null
+          height_cm?: number | null
+          id?: string
+          meal_goal?: string | null
           meal_goals?: string[]
-          experience_level?: 'beginner' | 'intermediate' | 'advanced' | null
-          preferred_training_days?: number[]
-          enable_training?: boolean; enable_nutrition_ai?: boolean; enable_body_tracking?: boolean
           onboarding_completed?: boolean
+          preferred_training_days?: number[]
+          training_goal?: string | null
+          training_goals?: string[]
+          updated_at?: string
         }
         Update: {
-          date_of_birth?: string | null; height_cm?: number | null
-          gender?: 'male' | 'female' | 'other' | null
-          training_goal?: 'muscle_gain' | 'weight_loss' | 'endurance' | 'general_fitness' | null
-          training_goals?: string[]
-          meal_goal?: 'weight_loss' | 'muscle_gain' | 'maintenance' | null
+          created_at?: string
+          date_of_birth?: string | null
+          enable_body_tracking?: boolean
+          enable_nutrition_ai?: boolean
+          enable_training?: boolean
+          experience_level?: string | null
+          family_id?: string
+          family_member_id?: string
+          gender?: string | null
+          height_cm?: number | null
+          id?: string
+          meal_goal?: string | null
           meal_goals?: string[]
-          experience_level?: 'beginner' | 'intermediate' | 'advanced' | null
-          preferred_training_days?: number[]
-          enable_training?: boolean; enable_nutrition_ai?: boolean; enable_body_tracking?: boolean
           onboarding_completed?: boolean
+          preferred_training_days?: number[]
+          training_goal?: string | null
+          training_goals?: string[]
+          updated_at?: string
         }
-        Relationships: []
-      }
-      training_plans: {
-        Row: { id: string; family_id: string; person: string; start_date: string; end_date: string; goal_snapshot: string | null; created_at: string }
-        Insert: { id?: string; family_id: string; person: string; start_date: string; end_date: string; goal_snapshot?: string | null }
-        Update: { goal_snapshot?: string | null }
-        Relationships: []
-      }
-      training_sessions: {
-        Row: { id: string; plan_id: string; family_id: string; person: string; scheduled_date: string; workout_type: string; exercises: Exercise[]; notes: string | null; completed: boolean; created_at: string }
-        Insert: { id?: string; plan_id: string; family_id: string; person: string; scheduled_date: string; workout_type: string; exercises?: Exercise[]; notes?: string | null; completed?: boolean }
-        Update: { scheduled_date?: string; workout_type?: string; exercises?: Exercise[]; notes?: string | null; completed?: boolean }
-        Relationships: []
+        Relationships: [
+          { foreignKeyName: "person_preferences_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] },
+          { foreignKeyName: "person_preferences_family_member_id_fkey"; columns: ["family_member_id"]; isOneToOne: true; referencedRelation: "family_members"; referencedColumns: ["id"] },
+        ]
       }
       progress_photos: {
-        Row: { id: string; family_id: string; member_name: string; taken_at: string; storage_path: string; label: string | null; notes: string | null; ai_analysis: string | null; created_at: string }
-        Insert: { id?: string; family_id: string; member_name: string; taken_at?: string; storage_path: string; label?: string | null; notes?: string | null; ai_analysis?: string | null }
-        Update: { label?: string | null; notes?: string | null; ai_analysis?: string | null }
-        Relationships: []
+        Row: { ai_analysis: string | null; created_at: string; family_id: string; id: string; label: string | null; member_name: string; notes: string | null; storage_path: string; taken_at: string }
+        Insert: { ai_analysis?: string | null; created_at?: string; family_id: string; id?: string; label?: string | null; member_name: string; notes?: string | null; storage_path: string; taken_at?: string }
+        Update: { ai_analysis?: string | null; created_at?: string; family_id?: string; id?: string; label?: string | null; member_name?: string; notes?: string | null; storage_path?: string; taken_at?: string }
+        Relationships: [{ foreignKeyName: "progress_photos_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
       }
-      body_log: {
-        Row: {
-          id: string; family_id: string; member_name: string; logged_at: string
-          weight_kg: number | null
-          waist_cm: number | null; hip_cm: number | null; neck_cm: number | null
-          chest_cm: number | null; arm_cm: number | null; thigh_cm: number | null
-          estimated_bf_pct: number | null
-          notes: string | null; created_at: string
-        }
-        Insert: {
-          id?: string; family_id: string; member_name: string; logged_at?: string
-          weight_kg?: number | null
-          waist_cm?: number | null; hip_cm?: number | null; neck_cm?: number | null
-          chest_cm?: number | null; arm_cm?: number | null; thigh_cm?: number | null
-          estimated_bf_pct?: number | null
-          notes?: string | null
-        }
-        Update: {
-          weight_kg?: number | null
-          waist_cm?: number | null; hip_cm?: number | null; neck_cm?: number | null
-          chest_cm?: number | null; arm_cm?: number | null; thigh_cm?: number | null
-          estimated_bf_pct?: number | null
-          notes?: string | null
-        }
-        Relationships: []
+      schedule_events: {
+        Row: { created_at: string | null; day: string; family_id: string; id: string; person: string; tag: string | null; time_end: string | null; time_start: string | null; title: string }
+        Insert: { created_at?: string | null; day: string; family_id: string; id?: string; person: string; tag?: string | null; time_end?: string | null; time_start?: string | null; title: string }
+        Update: { created_at?: string | null; day?: string; family_id?: string; id?: string; person?: string; tag?: string | null; time_end?: string | null; time_start?: string | null; title?: string }
+        Relationships: [{ foreignKeyName: "schedule_events_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
+      }
+      training_plans: {
+        Row: { created_at: string; end_date: string; family_id: string; goal_snapshot: string | null; id: string; person: string; start_date: string }
+        Insert: { created_at?: string; end_date: string; family_id: string; goal_snapshot?: string | null; id?: string; person: string; start_date: string }
+        Update: { created_at?: string; end_date?: string; family_id?: string; goal_snapshot?: string | null; id?: string; person?: string; start_date?: string }
+        Relationships: [{ foreignKeyName: "training_plans_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
+      }
+      training_sessions: {
+        Row: { completed: boolean; created_at: string; exercises: Json; family_id: string; id: string; notes: string | null; person: string; plan_id: string; scheduled_date: string; workout_type: string }
+        Insert: { completed?: boolean; created_at?: string; exercises?: Json; family_id: string; id?: string; notes?: string | null; person: string; plan_id: string; scheduled_date: string; workout_type: string }
+        Update: { completed?: boolean; created_at?: string; exercises?: Json; family_id?: string; id?: string; notes?: string | null; person?: string; plan_id?: string; scheduled_date?: string; workout_type?: string }
+        Relationships: [
+          { foreignKeyName: "training_sessions_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] },
+          { foreignKeyName: "training_sessions_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "training_plans"; referencedColumns: ["id"] },
+        ]
       }
     }
-    Views: Record<never, never>
-    Functions: Record<never, never>
-    Enums: Record<never, never>
-    CompositeTypes: Record<never, never>
+    Views: { [_ in never]: never }
+    Functions: { my_family_id: { Args: never; Returns: string } }
+    Enums: { [_ in never]: never }
+    CompositeTypes: { [_ in never]: never }
   }
 }
 
-export type Family             = Database['public']['Tables']['families']['Row']
-export type FamilyMember       = Database['public']['Tables']['family_members']['Row']
-export type ScheduleEvent      = Database['public']['Tables']['schedule_events']['Row']
-export type MealPlan           = Database['public']['Tables']['meal_plan']['Row']
-export type Pantry             = Database['public']['Tables']['pantry']['Row']
-export type PersonPreferences  = Database['public']['Tables']['person_preferences']['Row']
-export type TrainingPlan       = Database['public']['Tables']['training_plans']['Row']
-export type TrainingSession    = Database['public']['Tables']['training_sessions']['Row']
-export type BodyLog            = Database['public']['Tables']['body_log']['Row']
-export type ProgressPhoto      = Database['public']['Tables']['progress_photos']['Row']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<T extends keyof DefaultSchema["Tables"]> = DefaultSchema["Tables"][T]["Row"]
+export type FamilyMember = Tables<"family_members">
+export type PersonPreferences = Tables<"person_preferences">

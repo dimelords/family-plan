@@ -120,7 +120,7 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
               <div className="invite-link-box">
                 <span className="invite-link-text">{inviteLink}</span>
                 <button className="btn-secondary invite-share-btn" onClick={shareOrCopy}>
-                  {copied ? '✓ Kopierad!' : (navigator.share ? '↗ Dela' : '📋 Kopiera')}
+                  {copied ? '✓ Kopierad!' : ('share' in navigator ? '↗ Dela' : '📋 Kopiera')}
                 </button>
               </div>
             )}

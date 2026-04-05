@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { useTheme } from './hooks/useTheme'
 import { useWeek } from './hooks/useWeek'
 import { useFamily } from './hooks/useFamily'
