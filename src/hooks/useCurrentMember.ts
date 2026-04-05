@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { FamilyMember, PersonPreferences } from '../types/database'
 
-export function useCurrentMember(familyId: string | null, members: FamilyMember[]) {
-  const [memberId, setMemberIdState] = useState<string | null>(
-    () => localStorage.getItem('current_member_id'),
-  )
+export function useCurrentMember(familyId: string | null, members: FamilyMember[], memberId: string | null) {
   const [prefs, setPrefs] = useState<PersonPreferences | null>(null)
   const [loadingPrefs, setLoadingPrefs] = useState(true)
 
@@ -25,11 +22,6 @@ export function useCurrentMember(familyId: string | null, members: FamilyMember[
       })
   }, [memberId])
 
-  function setMemberId(id: string) {
-    localStorage.setItem('current_member_id', id)
-    setMemberIdState(id)
-  }
-
   async function savePrefs(update: Partial<PersonPreferences>) {
     if (!memberId || !familyId) return
     const { data, error } = await supabase
@@ -42,12 +34,11 @@ export function useCurrentMember(familyId: string | null, members: FamilyMember[
       .single()
     if (error) {
       console.error('[savePrefs] Supabase error:', error)
-      // Surface the error so it's not silently swallowed
       alert('Kunde inte spara inställningar: ' + error.message)
       return
     }
     setPrefs(data)
   }
 
-  return { member, memberId, setMemberId, prefs, loadingPrefs, savePrefs }
+  return { member, prefs, loadingPrefs, savePrefs }
 }

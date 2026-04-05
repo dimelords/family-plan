@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { getApiKey, setApiKey } from '../../lib/claude'
 import { useTheme, type ThemePref } from '../../hooks/useTheme'
+import { signOut } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 import type { FamilyMember, PersonPreferences } from '../../types/database'
 
 interface Props {
@@ -20,8 +22,13 @@ const THEME_OPTIONS: { value: ThemePref; label: string; icon: string }[] = [
 export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Props) {
   const [key, setKey] = useState(() => getApiKey() ?? '')
   const { pref, setPref } = useTheme()
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   if (!open) return null
+
+  const isOwner = member?.role === 'owner'
 
   function save() {
     setApiKey(key.trim())
@@ -31,6 +38,36 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
   async function toggleFeature(field: 'enable_training' | 'enable_nutrition_ai' | 'enable_body_tracking') {
     if (!prefs) return
     await onSavePrefs({ [field]: !prefs[field] })
+  }
+
+  async function generateInvite() {
+    if (!member?.family_id) return
+    setInviteLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('family_invitations')
+        .insert({ family_id: member.family_id })
+        .select('token')
+        .single()
+      if (error) throw error
+      const url = `${window.location.origin}/?join=${data.token}`
+      setInviteLink(url)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  async function shareOrCopy() {
+    if (!inviteLink) return
+    if (navigator.share) {
+      await navigator.share({ title: 'Gå med i Familjeveckan', url: inviteLink })
+    } else {
+      await navigator.clipboard.writeText(inviteLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   return (
@@ -56,26 +93,39 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
           </div>
         </div>
 
-        {/* Feature toggles for current person */}
+        {/* Feature toggles */}
         {member && prefs && (
           <div className="form-group">
             <label className="form-label">Funktioner för {member.name}</label>
             <div className="feature-toggle-list">
-              <FeatureToggle
-                label="💪 Träning"
-                enabled={prefs.enable_training}
-                onToggle={() => toggleFeature('enable_training')}
-              />
-              <FeatureToggle
-                label="🍽️ AI-matplanering"
-                enabled={prefs.enable_nutrition_ai}
-                onToggle={() => toggleFeature('enable_nutrition_ai')}
-              />
-              <FeatureToggle
-                label="📊 Kroppsmätningar"
-                enabled={prefs.enable_body_tracking}
-                onToggle={() => toggleFeature('enable_body_tracking')}
-              />
+              <FeatureToggle label="💪 Träning" enabled={prefs.enable_training}
+                onToggle={() => toggleFeature('enable_training')} />
+              <FeatureToggle label="🍽️ AI-matplanering" enabled={prefs.enable_nutrition_ai}
+                onToggle={() => toggleFeature('enable_nutrition_ai')} />
+              <FeatureToggle label="📊 Kroppsmätningar" enabled={prefs.enable_body_tracking}
+                onToggle={() => toggleFeature('enable_body_tracking')} />
+            </div>
+          </div>
+        )}
+
+        {/* Invite — only for owners */}
+        {isOwner && (
+          <div className="form-group">
+            <label className="form-label">Bjud in familjemedlem</label>
+            {!inviteLink ? (
+              <button className="btn-secondary" onClick={generateInvite} disabled={inviteLoading}>
+                {inviteLoading ? '…' : '🔗 Skapa inbjudningslänk'}
+              </button>
+            ) : (
+              <div className="invite-link-box">
+                <span className="invite-link-text">{inviteLink}</span>
+                <button className="btn-secondary invite-share-btn" onClick={shareOrCopy}>
+                  {copied ? '✓ Kopierad!' : (navigator.share ? '↗ Dela' : '📋 Kopiera')}
+                </button>
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+              Länken är giltig i 48 timmar och kan bara användas en gång.
             </div>
           </div>
         )}
@@ -91,6 +141,9 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
         </div>
 
         <button className="btn-primary" onClick={save}>Spara</button>
+
+        {/* Sign out */}
+        <button className="btn-signout" onClick={signOut}>Logga ut</button>
       </div>
     </div>
   )
