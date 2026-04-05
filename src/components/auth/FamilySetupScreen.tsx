@@ -25,19 +25,22 @@ export function FamilySetupScreen({ user, inviteToken, onDone }: Props) {
     if (!familyName.trim() || !memberName.trim()) return
     setLoading(true); setError(null)
     try {
-      // 1. Create family
-      const { data: family, error: fe } = await supabase
+      // Generate the family ID client-side so we never need SELECT after INSERT.
+      // Avoids RLS chicken-and-egg: families SELECT policy needs family_members row,
+      // but family_members doesn't exist yet at the time of RETURNING.
+      const familyId = crypto.randomUUID()
+
+      // 1. Create family (no .select() — we already have the id)
+      const { error: fe } = await supabase
         .from('families')
-        .insert({ name: familyName.trim() })
-        .select()
-        .single()
+        .insert({ id: familyId, name: familyName.trim() })
       if (fe) throw fe
 
       // 2. Create family member linked to this user
       const { error: me } = await supabase
         .from('family_members')
         .insert({
-          family_id: family.id,
+          family_id: familyId,
           user_id: user.id,
           name: memberName.trim(),
           role: 'owner',
