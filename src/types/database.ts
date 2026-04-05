@@ -249,5 +249,28 @@ type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<T extends keyof DefaultSchema["Tables"]> = DefaultSchema["Tables"][T]["Row"]
-export type FamilyMember = Tables<"family_members">
+
+// Named type aliases used throughout the app
+export type Family            = Tables<"families">
+export type FamilyMember      = Tables<"family_members">
+export type FamilyInvitation  = Tables<"family_invitations">
 export type PersonPreferences = Tables<"person_preferences">
+export type ScheduleEvent     = Tables<"schedule_events">
+export type MealPlan          = Tables<"meal_plan">
+export type Pantry            = Tables<"pantry">
+export type TrainingPlan      = Tables<"training_plans">
+export type TrainingSession   = Tables<"training_sessions">
+export type BodyLog           = Tables<"body_log">
+export type ProgressPhoto     = Tables<"progress_photos">
+
+// Exercise is a nested type inside training_sessions.exercises (JSON)
+export interface Exercise {
+  name: string
+  sets: number
+  reps: string
+  rest_seconds?: number
+  notes?: string
+}
+
+// gender narrowed type for BodyTab compatibility
+export type Gender = 'male' | 'female' | 'other'

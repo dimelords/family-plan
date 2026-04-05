@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { TrainingSession } from '../../types/database'
+import type { TrainingSession, Exercise } from '../../types/database'
 
 interface Props {
   session: TrainingSession
@@ -58,7 +58,7 @@ export function SessionDetailModal({ session, onClose, onToggleComplete }: Props
 
         {/* Exercise list */}
         <div className="session-detail-exercises">
-          {session.exercises.map((e, i) => (
+          {(session.exercises as Exercise[]).map((e: Exercise, i: number) => (
             <div key={i} className="session-detail-ex">
               <div className="session-detail-ex-header">
                 <span className="session-detail-ex-num">{i + 1}</span>

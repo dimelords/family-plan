@@ -163,7 +163,8 @@ Inkludera ALLA pass för alla 4 veckor. Returnera bara JSON-array.`
 
     if (!plan) { setSaving(false); return }
 
-    const sessionRows: Omit<TrainingSession, 'id' | 'created_at'>[] = preview.map(s => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sessionRows: any[] = preview.map(s => {
       const d = new Date(startDate)
       d.setDate(d.getDate() + s.day_offset)
       return {

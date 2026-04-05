@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { TrainingSession } from '../../types/database'
+import type { TrainingSession, Exercise } from '../../types/database'
 
 interface Props {
   session: TrainingSession
@@ -36,7 +36,7 @@ export function SessionCard({ session, onToggleComplete, onExpand }: Props) {
       <div className="session-body">
         <div className="session-type">{session.workout_type}</div>
         <div className="session-exercises">
-          {session.exercises.slice(0, 3).map((e, i) => (
+          {(session.exercises as Exercise[]).slice(0, 3).map((e: Exercise, i: number) => (
             <div key={i} className="session-ex-row">
               <span className="session-ex-name">{shortName(e.name)}</span>
               <span className="session-ex-sets">{e.sets}×{e.reps}</span>

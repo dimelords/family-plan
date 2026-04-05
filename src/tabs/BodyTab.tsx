@@ -5,7 +5,7 @@ import {
 } from 'recharts'
 import { useBodyLog } from '../hooks/useBodyLog'
 import { estimateBfPct, calcBmi, bmiCategory } from '../lib/bodyFat'
-import type { FamilyMember, PersonPreferences } from '../types/database'
+import type { FamilyMember, PersonPreferences, Gender } from '../types/database'
 
 interface Props {
   familyId: string
@@ -66,7 +66,7 @@ export function BodyTab({ familyId, member, prefs }: Props) {
   }
 
   const previewBf = useMemo(() => estimateBfPct({
-    gender: prefs.gender,
+    gender: prefs.gender as Gender | null,
     height_cm: prefs.height_cm,
     waist_cm: num(form.waist_cm),
     neck_cm: num(form.neck_cm),
@@ -80,7 +80,7 @@ export function BodyTab({ familyId, member, prefs }: Props) {
   async function handleSave() {
     setSaving(true)
     const bf = estimateBfPct({
-      gender: prefs.gender,
+      gender: prefs.gender as Gender | null,
       height_cm: prefs.height_cm,
       waist_cm: num(form.waist_cm),
       neck_cm: num(form.neck_cm),
