@@ -161,9 +161,11 @@ export type Database = {
           meal_goals: string[]
           onboarding_completed: boolean
           preferred_training_days: number[]
+          preferred_training_time: string | null
           training_goal: string | null
           training_goals: string[]
           updated_at: string
+          wake_time: string | null
         }
         Insert: {
           created_at?: string
@@ -181,9 +183,11 @@ export type Database = {
           meal_goals?: string[]
           onboarding_completed?: boolean
           preferred_training_days?: number[]
+          preferred_training_time?: string | null
           training_goal?: string | null
           training_goals?: string[]
           updated_at?: string
+          wake_time?: string | null
         }
         Update: {
           created_at?: string
@@ -201,9 +205,11 @@ export type Database = {
           meal_goals?: string[]
           onboarding_completed?: boolean
           preferred_training_days?: number[]
+          preferred_training_time?: string | null
           training_goal?: string | null
           training_goals?: string[]
           updated_at?: string
+          wake_time?: string | null
         }
         Relationships: [
           { foreignKeyName: "person_preferences_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] },

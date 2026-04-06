@@ -93,19 +93,41 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
           </div>
         </div>
 
-        {/* Feature toggles */}
+        {/* Feature toggles + timing */}
         {member && prefs && (
-          <div className="form-group">
-            <label className="form-label">Funktioner för {member.name}</label>
-            <div className="feature-toggle-list">
-              <FeatureToggle label="💪 Träning" enabled={prefs.enable_training}
-                onToggle={() => toggleFeature('enable_training')} />
-              <FeatureToggle label="🍽️ AI-matplanering" enabled={prefs.enable_nutrition_ai}
-                onToggle={() => toggleFeature('enable_nutrition_ai')} />
-              <FeatureToggle label="📊 Kroppsmätningar" enabled={prefs.enable_body_tracking}
-                onToggle={() => toggleFeature('enable_body_tracking')} />
+          <>
+            <div className="form-group">
+              <label className="form-label">Funktioner för {member.name}</label>
+              <div className="feature-toggle-list">
+                <FeatureToggle label="💪 Träning" enabled={prefs.enable_training}
+                  onToggle={() => toggleFeature('enable_training')} />
+                <FeatureToggle label="🍽️ AI-matplanering" enabled={prefs.enable_nutrition_ai}
+                  onToggle={() => toggleFeature('enable_nutrition_ai')} />
+                <FeatureToggle label="📊 Kroppsmätningar" enabled={prefs.enable_body_tracking}
+                  onToggle={() => toggleFeature('enable_body_tracking')} />
+              </div>
             </div>
-          </div>
+            <div className="form-group">
+              <label className="form-label">Dagliga tider</label>
+              <div className="settings-time-row">
+                <div className="settings-time-field">
+                  <span className="settings-time-label">🌅 Vaknar</span>
+                  <input className="form-input" type="time"
+                    defaultValue={prefs.wake_time ?? '07:00'}
+                    onBlur={e => onSavePrefs({ wake_time: e.target.value })} />
+                </div>
+                <div className="settings-time-field">
+                  <span className="settings-time-label">💪 Träning</span>
+                  <input className="form-input" type="time"
+                    defaultValue={prefs.preferred_training_time ?? '11:00'}
+                    onBlur={e => onSavePrefs({ preferred_training_time: e.target.value })} />
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                Används av AI för att anpassa måltidstiming till din dag.
+              </div>
+            </div>
+          </>
         )}
 
         {/* Invite — only for owners */}

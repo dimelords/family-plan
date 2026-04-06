@@ -50,6 +50,11 @@ export function useTrainingPlan(familyId: string | null, person: string | null) 
     )
   }
 
+  async function deleteSession(sessionId: string) {
+    await supabase.from('training_sessions').delete().eq('id', sessionId)
+    setSessions(prev => prev.filter(s => s.id !== sessionId))
+  }
+
   async function toggleComplete(sessionId: string, completed: boolean) {
     await supabase
       .from('training_sessions')
@@ -60,5 +65,5 @@ export function useTrainingPlan(familyId: string | null, person: string | null) 
     )
   }
 
-  return { plan, sessions, loading, reload: load, moveSession, toggleComplete }
+  return { plan, sessions, loading, reload: load, moveSession, deleteSession, toggleComplete }
 }

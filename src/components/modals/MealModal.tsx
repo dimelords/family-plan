@@ -2,19 +2,19 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { claudeCall, parseJson, getApiKey } from '../../lib/claude'
 import { dateStr } from '../../lib/dates'
-import { MEAL_NAMES, GYM_DAYS } from '../../lib/constants'
-import type { MealPlan, Pantry, FamilyMember, PersonPreferences } from '../../types/database'
+import { MEAL_NAMES } from '../../lib/constants'
+import type { MealPlan, Pantry, FamilyMember, PersonPreferences, TrainingSession } from '../../types/database'
 
 interface Props {
   open: boolean
   familyId: string
   day: Date | null
-  dayIdx: number
   pantry: Pantry[]
   recentMeals: MealPlan[]
   currentMeals: MealPlan[]
   member?: FamilyMember | null
   prefs?: PersonPreferences | null
+  trainingSession?: TrainingSession | null   // session for this specific day, if any
   onClose: () => void
   onSaved: () => void
 }
@@ -22,7 +22,7 @@ interface Props {
 type Mode = 'manual' | 'ai'
 type AISuggestion = { meal_type: string; description: string }
 
-export function MealModal({ open, familyId, day, dayIdx, pantry, recentMeals, currentMeals, member, prefs, onClose, onSaved }: Props) {
+export function MealModal({ open, familyId, day, pantry, recentMeals, currentMeals, member, prefs, trainingSession, onClose, onSaved }: Props) {
   const [mode, setMode] = useState<Mode>('manual')
   const [mealType, setMealType] = useState('F')
   const [description, setDescription] = useState('')
@@ -35,7 +35,7 @@ export function MealModal({ open, familyId, day, dayIdx, pantry, recentMeals, cu
 
   if (!open || !day) return null
 
-  const isGym = (GYM_DAYS as readonly number[]).includes(dayIdx)
+  const isGym = !!trainingSession   // use actual training session, not hardcoded days
   const ds = dateStr(day)
   const dayName = day.toLocaleString('sv-SE', { weekday: 'long' })
   const leftovers = pantry.filter(p => p.is_leftover)
@@ -92,9 +92,33 @@ export function MealModal({ open, familyId, day, dayIdx, pantry, recentMeals, cu
             ? 'Mål: uthållighet – högt kolhydratintag, måttlig protein, fokus på återhämtning'
             : 'Mål: bibehålla vikt och hälsa – balanserade makros, god mättnad, varierad kost'
 
-    const gymDayContext = isGym
-      ? `TRÄNINGSDAG – viktigt:\n- Äta 1–2h FÖRE pass: 20–40g protein + 40–80g snabba kolhydrater\n- Inom 2h EFTER pass: 25–40g protein + 50–100g kolhydrater för återhämtning\n- Lite extra kalorier och kol totalt idag`
-      : 'Vilodagar: normalt kaloriintag, prioritera proteinrika måltider och fiber'
+    // Build timing context from prefs + actual training session
+    const wakeTime = prefs?.wake_time ?? '07:00'
+    const trainTime = prefs?.preferred_training_time ?? (isGym ? '11:00' : null)
+
+    function addMinutes(hhmm: string, mins: number): string {
+      const [h, m] = hhmm.split(':').map(Number)
+      const total = h * 60 + m + mins
+      return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+    }
+
+    const gymDayContext = isGym && trainTime
+      ? `TRÄNINGSDAG – pass: ${trainingSession?.workout_type ?? 'träning'} kl ${trainTime}
+Optimal måltidstiming idag:
+- ${wakeTime} Frukost: kolhydrater + protein (t.ex. havregryn med ägg/kvarg)
+- ${addMinutes(trainTime, -90)} Pre-workout snack: 20–30g protein + snabba kolh (t.ex. banan + vassle/kvarg)
+- ${trainTime} TRÄNING
+- ${addMinutes(trainTime, 60)} Post-workout lunch: 30–40g protein + 60–100g kolh – PRIORITET, startar återhämtning
+- Ca 16:00 Mellanmål: protein + frukt
+- Ca 19:00 Middag: protein + grönsaker + komplexa kolh
+Totalt: +200–300 kcal vs viloddag, extra kolh kring passet`
+      : `VILODAG – kl ${wakeTime} uppvaknande
+Optimal måltidstiming idag:
+- ${wakeTime} Frukost: protein + fett + fiber (t.ex. ägg, avokado, grönsaker)
+- Ca ${addMinutes(wakeTime, 240)} Lunch: protein + grönsaker + komplexa kolh
+- Ca 16:00 Mellanmål: protein + frukt
+- Ca 19:00 Middag: protein + grönsaker, lägre kolhydrater
+Fokus: proteinrika måltider för muskelbevarande, lägre kolh, mer fiber och fett`
 
     const system = `Du är en evidensbaserad kostrådgivare för ${name}.
 ${tdeeHint}

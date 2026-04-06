@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { supabase } from '../../lib/supabase'
 import {
   DndContext, DragOverlay,
   PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
@@ -14,8 +15,37 @@ interface Props {
   plan: TrainingPlan
   sessions: TrainingSession[]
   onMove: (sessionId: string, newDate: string) => void
+  onDelete: (sessionId: string) => void
   onToggleComplete: (id: string, completed: boolean) => void
   onExpand: (session: TrainingSession) => void
+  familyId: string   // needed to check meal_plan
+}
+
+interface Conflict {
+  dragged: TrainingSession
+  existing: TrainingSession
+  targetDate: string
+  nextDate: string
+  nextDayFree: boolean
+}
+
+interface MealPrompt {
+  oldDate: string   // was a training day → now rest
+  newDate: string   // was a rest day → now training
+  hasMealsOld: boolean
+  hasMealsNew: boolean
+}
+
+function addDays(dateStr: string, n: number): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + n)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function humanDate(ds: string): string {
+  const d = new Date(ds + 'T12:00:00')
+  const days = ['sön', 'mån', 'tis', 'ons', 'tor', 'fre', 'lör']
+  return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`
 }
 
 function getWeeks(plan: TrainingPlan): Date[][] {
@@ -33,9 +63,27 @@ function getWeeks(plan: TrainingPlan): Date[][] {
   return weeks
 }
 
-export function WeekView({ plan, sessions, onMove, onToggleComplete, onExpand }: Props) {
+export function WeekView({ plan, sessions, onMove, onDelete, onToggleComplete, onExpand, familyId }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [currentWeek, setCurrentWeek] = useState(0)
+  const [conflict, setConflict] = useState<Conflict | null>(null)
+  const [mealPrompt, setMealPrompt] = useState<MealPrompt | null>(null)
+
+  const checkMeals = useCallback(async (oldDate: string, newDate: string) => {
+    const { data } = await supabase
+      .from('meal_plan')
+      .select('day')
+      .eq('family_id', familyId)
+      .in('day', [oldDate, newDate])
+    const days = new Set((data ?? []).map(r => r.day))
+    if (days.has(oldDate) || days.has(newDate)) {
+      setMealPrompt({
+        oldDate, newDate,
+        hasMealsOld: days.has(oldDate),
+        hasMealsNew: days.has(newDate),
+      })
+    }
+  }, [familyId])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -54,35 +102,57 @@ export function WeekView({ plan, sessions, onMove, onToggleComplete, onExpand }:
     if (!over) return
 
     const overId = String(over.id)
-    const session = sessions.find(s => s.id === String(active.id))
-    if (!session) return
+    const dragged = sessions.find(s => s.id === String(active.id))
+    if (!dragged) return
 
-    // over.id is either a date string (dropped on empty day) or another session id
+    // Resolve target date
     let targetDate: string
     if (overId.match(/^\d{4}-\d{2}-\d{2}$/)) {
       targetDate = overId
     } else {
-      // Dropped on another session — use that session's date
       const targetSession = sessions.find(s => s.id === overId)
-      targetDate = targetSession?.scheduled_date ?? session.scheduled_date
+      targetDate = targetSession?.scheduled_date ?? dragged.scheduled_date
     }
 
-    if (targetDate !== session.scheduled_date) {
-      onMove(session.id, targetDate)
+    if (targetDate === dragged.scheduled_date) return
+
+    const existing = sessions.find(
+      s => s.scheduled_date === targetDate && s.id !== dragged.id
+    )
+
+    if (existing) {
+      const nextDate = addDays(targetDate, 1)
+      const nextDayFree = !sessions.some(s => s.scheduled_date === nextDate && s.id !== dragged.id)
+      setConflict({ dragged, existing, targetDate, nextDate, nextDayFree })
+    } else {
+      onMove(dragged.id, targetDate)
+      checkMeals(dragged.scheduled_date, targetDate)
     }
   }
 
   function handleDragOver(event: DragOverEvent) {
-    // Cross-week: if dragged near boundary, auto-switch week
     const { over } = event
     if (!over) return
     const overId = String(over.id)
-    // If the over target is a date outside current week, switch week
     const overDate = overId.match(/^\d{4}-\d{2}-\d{2}$/) ? overId
       : sessions.find(s => s.id === overId)?.scheduled_date
     if (!overDate) return
     const weekIdx = weeks.findIndex(w => w.some(d => dateStr(d) === overDate))
     if (weekIdx >= 0 && weekIdx !== currentWeek) setCurrentWeek(weekIdx)
+  }
+
+  function resolveConflict(choice: 'replace' | 'push') {
+    if (!conflict) return
+    const oldDate = conflict.dragged.scheduled_date
+    if (choice === 'replace') {
+      onDelete(conflict.existing.id)
+      onMove(conflict.dragged.id, conflict.targetDate)
+    } else {
+      onMove(conflict.existing.id, conflict.nextDate)
+      onMove(conflict.dragged.id, conflict.targetDate)
+    }
+    setConflict(null)
+    checkMeals(oldDate, conflict.targetDate)
   }
 
   const completedCount = sessions.filter(s => s.completed).length
@@ -137,6 +207,65 @@ export function WeekView({ plan, sessions, onMove, onToggleComplete, onExpand }:
         </DragOverlay>
       </DndContext>
 
+      {/* Meal update prompt */}
+      {mealPrompt && (
+        <div className="conflict-overlay">
+          <div className="conflict-dialog">
+            <p className="conflict-title">Uppdatera kostplanen?</p>
+            <p className="conflict-sub">
+              Träningspasset är flyttat.
+              {mealPrompt.hasMealsOld && ` ${humanDate(mealPrompt.oldDate)} är nu en vilodag men har planerade måltider.`}
+              {mealPrompt.hasMealsNew && ` ${humanDate(mealPrompt.newDate)} är nu en träningsdag men har planerade måltider.`}
+              {' '}Vill du uppdatera kostplanen för att matcha?
+            </p>
+            <div className="conflict-actions">
+              <button className="btn-primary" onClick={async () => {
+                const days = [
+                  mealPrompt.hasMealsOld ? mealPrompt.oldDate : null,
+                  mealPrompt.hasMealsNew ? mealPrompt.newDate : null,
+                ].filter(Boolean) as string[]
+                for (const d of days) {
+                  await supabase.from('meal_plan').delete()
+                    .eq('family_id', familyId).eq('day', d)
+                }
+                setMealPrompt(null)
+              }}>
+                Ja, rensa berörda dagar
+              </button>
+              <button className="btn-secondary" onClick={() => setMealPrompt(null)}>
+                Behåll som det är
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conflict resolution dialog */}
+      {conflict && (
+        <div className="conflict-overlay">
+          <div className="conflict-dialog">
+            <p className="conflict-title">
+              {humanDate(conflict.targetDate)} har redan ett pass
+            </p>
+            <p className="conflict-sub">
+              <strong>{conflict.existing.workout_type}</strong> är bokad den dagen. Vad vill du göra?
+            </p>
+            <div className="conflict-actions">
+              {conflict.nextDayFree && (
+                <button className="btn-primary" onClick={() => resolveConflict('push')}>
+                  Flytta befintligt till {humanDate(conflict.nextDate)}
+                </button>
+              )}
+              <button className="btn-danger" onClick={() => resolveConflict('replace')}>
+                Ta bort befintligt pass
+              </button>
+              <button className="btn-secondary" onClick={() => setConflict(null)}>
+                Avbryt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -40,6 +40,8 @@ export function OnboardingModal({ open, member, onDone }: Props) {
   const [trainingGoals, setTrainingGoals] = useState<string[]>([])
   const [experience, setExperience] = useState('')
   const [prefDays, setPrefDays] = useState<number[]>([])
+  const [wakeTime, setWakeTime] = useState('07:00')
+  const [trainingTime, setTrainingTime] = useState('11:00')
 
   // Step 3 – meals
   const [wantsMealAI, setWantsMealAI] = useState<boolean | null>(null)
@@ -67,6 +69,8 @@ export function OnboardingModal({ open, member, onDone }: Props) {
       training_goals: wantsTraining ? trainingGoals : [],
       experience_level: (wantsTraining && experience ? experience : null) as PersonPreferences['experience_level'],
       preferred_training_days: wantsTraining ? prefDays : [],
+      wake_time: wakeTime || null,
+      preferred_training_time: wantsTraining ? (trainingTime || null) : null,
       enable_nutrition_ai: isMinor() ? false : (wantsMealAI ?? true),
       meal_goal: (wantsMealAI && mealGoals.length > 0 ? mealGoals[0] : null) as PersonPreferences['meal_goal'],
       meal_goals: wantsMealAI ? mealGoals : [],
@@ -162,8 +166,18 @@ export function OnboardingModal({ open, member, onDone }: Props) {
                     ))}
                   </div>
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Vilken tid tränar du vanligtvis?</label>
+                  <input className="form-input" type="time" value={trainingTime}
+                    onChange={e => setTrainingTime(e.target.value)} />
+                </div>
               </>
             )}
+            <div className="form-group">
+              <label className="form-label">Vilken tid vaknar du vanligtvis?</label>
+              <input className="form-input" type="time" value={wakeTime}
+                onChange={e => setWakeTime(e.target.value)} />
+            </div>
 
             <div style={{display:'flex',gap:8,marginTop:8}}>
               <button className="btn-secondary" onClick={() => setStep('basic')}>← Tillbaka</button>

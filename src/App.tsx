@@ -7,6 +7,8 @@ import { useScheduleData } from './hooks/useScheduleData'
 import { useCurrentMember } from './hooks/useCurrentMember'
 import { usePersonFeatures } from './hooks/usePersonFeatures'
 import { useAuth } from './hooks/useAuth'
+import { useTrainingPlan } from './hooks/useTrainingPlan'
+import { dateStr } from './lib/dates'
 import { supabase } from './lib/supabase'
 import { Header } from './components/Header'
 import { StatusBar } from './components/StatusBar'
@@ -99,6 +101,7 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
   const { events, meals, pantry, recentMeals, status, reload } = useScheduleData(familyId, weekStart)
   const { member, prefs, loadingPrefs, savePrefs } = useCurrentMember(familyId, members, memberId)
   const features = usePersonFeatures(prefs)
+  const { sessions: trainingSessions } = useTrainingPlan(familyId, member?.name ?? null)
 
   const [tab, setTab] = useState<Tab>('training')
   const [eventModalDay, setEventModalDay] = useState<number | null>(null)
@@ -241,12 +244,14 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
             open={mealModalOpen}
             familyId={familyId}
             day={days[selectedDay]}
-            dayIdx={selectedDay}
             pantry={pantry}
             recentMeals={recentMeals}
             currentMeals={meals}
             member={member}
             prefs={prefs}
+            trainingSession={trainingSessions.find(
+              s => days[selectedDay] && s.scheduled_date === dateStr(days[selectedDay])
+            ) ?? null}
             onClose={() => setMealModalOpen(false)}
             onSaved={() => { setMealModalOpen(false); reload() }}
           />
