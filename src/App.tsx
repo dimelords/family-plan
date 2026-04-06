@@ -26,6 +26,7 @@ const EventModal     = lazy(() => import('./components/modals/EventModal').then(
 const MealModal      = lazy(() => import('./components/modals/MealModal').then(m => ({ default: m.MealModal })))
 const PantryModal    = lazy(() => import('./components/modals/PantryModal').then(m => ({ default: m.PantryModal })))
 const SettingsModal  = lazy(() => import('./components/modals/SettingsModal').then(m => ({ default: m.SettingsModal })))
+const RecipeModal    = lazy(() => import('./components/modals/RecipeModal').then(m => ({ default: m.RecipeModal })))
 const OnboardingModal = lazy(() => import('./components/modals/OnboardingModal').then(m => ({ default: m.OnboardingModal })))
 import { LoginScreen } from './components/auth/LoginScreen'
 import { FamilySetupScreen } from './components/auth/FamilySetupScreen'
@@ -113,6 +114,7 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
   const [pantryModalOpen, setPantryModalOpen] = useState(false)
   const [pantryMode, setPantryMode] = useState<PantryMode>('manual')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [recipeMeal, setRecipeMeal] = useState<import('./types/database').MealPlan | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   // Handle return from Withings OAuth
@@ -224,7 +226,8 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
         {tab === 'meals' && features.canUseNutritionAI && (
           <MealsTab days={days} meals={meals}
             onAdd={() => setMealModalOpen(true)}
-            onDelete={deleteMeal} />
+            onDelete={deleteMeal}
+            onRecipe={setRecipeMeal} />
         )}
         {tab === 'pantry' && features.canUseNutritionAI && (
           <PantryTab pantry={pantry}
@@ -299,6 +302,15 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
           prefs={prefs}
           onSavePrefs={savePrefs}
           onClose={() => setSettingsOpen(false)}
+        />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <RecipeModal
+          open={recipeMeal !== null}
+          meal={recipeMeal}
+          familyId={familyId}
+          onClose={() => setRecipeMeal(null)}
         />
       </Suspense>
 

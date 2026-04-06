@@ -9,9 +9,10 @@ interface Props {
   meals: MealPlan[]
   onAdd: () => void
   onDelete: (id: string) => void
+  onRecipe: (meal: MealPlan) => void
 }
 
-export function MealsTab({ days, meals, onAdd, onDelete }: Props) {
+export function MealsTab({ days, meals, onAdd, onDelete, onRecipe }: Props) {
   const todayRef = useRef<HTMLDivElement>(null)
   const today = dateStr(new Date())
 
@@ -57,7 +58,10 @@ export function MealsTab({ days, meals, onAdd, onDelete }: Props) {
                           <span className="ml">{MEAL_NAMES[m.meal_type] ?? m.meal_type}</span>
                           {m.description}
                         </div>
-                        <button className="meal-del" onClick={() => onDelete(m.id)}>✕</button>
+                        <div className="meal-item-actions">
+                          <button className="meal-recipe-btn" onClick={() => onRecipe(m)} title="Visa recept">🍳</button>
+                          <button className="meal-del" onClick={() => onDelete(m.id)}>✕</button>
+                        </div>
                       </div>
                     ))
                 }

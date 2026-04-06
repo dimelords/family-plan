@@ -246,6 +246,12 @@ export type Database = {
           { foreignKeyName: "training_sessions_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "training_plans"; referencedColumns: ["id"] },
         ]
       }
+      recipes: {
+        Row: { id: string; family_id: string; source_description: string; title: string; servings: number; ingredients: Json; steps: Json; created_at: string }
+        Insert: { id?: string; family_id: string; source_description: string; title: string; servings: number; ingredients: Json; steps: Json; created_at?: string }
+        Update: { id?: string; family_id?: string; source_description?: string; title?: string; servings?: number; ingredients?: Json; steps?: Json; created_at?: string }
+        Relationships: [{ foreignKeyName: "recipes_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
+      }
       withings_tokens: {
         Row: { id: string; user_id: string; access_token: string; refresh_token: string; expires_at: string; withings_user_id: string | null; last_synced_at: string | null; created_at: string; updated_at: string }
         Insert: { id?: string; user_id: string; access_token: string; refresh_token: string; expires_at: string; withings_user_id?: string | null; last_synced_at?: string | null; created_at?: string; updated_at?: string }
@@ -277,6 +283,27 @@ export type TrainingPlan      = Tables<"training_plans">
 export type TrainingSession   = Tables<"training_sessions">
 export type BodyLog           = Tables<"body_log">
 export type ProgressPhoto     = Tables<"progress_photos">
+export type RecipeRow         = Tables<"recipes">
+
+// Structured recipe types (stored as JSONB)
+export interface RecipeIngredient {
+  name: string
+  amount: number
+  unit: string
+}
+
+export interface RecipeStep {
+  title: string
+  description: string
+  timer_seconds?: number
+}
+
+export interface Recipe {
+  title: string
+  servings: number
+  ingredients: RecipeIngredient[]
+  steps: RecipeStep[]
+}
 
 // Exercise is a nested type inside training_sessions.exercises (JSON)
 export interface Exercise {
