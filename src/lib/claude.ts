@@ -1,3 +1,5 @@
+import { jsonrepair } from 'jsonrepair'
+
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-haiku-4-5-20251001'
 
@@ -37,7 +39,15 @@ export async function claudeCall(
 }
 
 export function parseJson<T>(raw: string): T {
-  return JSON.parse(raw.replace(/```json|```/g, '').trim()) as T
+  // Strip markdown fences, then attempt normal parse.
+  // Fall back to jsonrepair for the common case where Claude emits unescaped
+  // quotes, Swedish characters, or trailing commas inside JSON strings.
+  const cleaned = raw.replace(/```json|```/g, '').trim()
+  try {
+    return JSON.parse(cleaned) as T
+  } catch {
+    return JSON.parse(jsonrepair(cleaned)) as T
+  }
 }
 
 type AnthropicContent = Array<{ type: string; [key: string]: unknown }>

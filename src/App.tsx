@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { useTheme } from './hooks/useTheme'
 import { useWeek } from './hooks/useWeek'
@@ -12,16 +12,19 @@ import { Header } from './components/Header'
 import { StatusBar } from './components/StatusBar'
 import { DayStrip } from './components/DayStrip'
 import { DayPanel } from './components/DayPanel'
-import { TrainingTab } from './tabs/TrainingTab'
-import { MealsTab } from './tabs/MealsTab'
-import { PantryTab } from './tabs/PantryTab'
-import { BodyTab } from './tabs/BodyTab'
-import { PhotosTab } from './tabs/PhotosTab'
-import { EventModal } from './components/modals/EventModal'
-import { MealModal } from './components/modals/MealModal'
-import { PantryModal } from './components/modals/PantryModal'
-import { SettingsModal } from './components/modals/SettingsModal'
-import { OnboardingModal } from './components/modals/OnboardingModal'
+// Tabs — lazy-loaded so only the active tab's code is fetched
+const TrainingTab    = lazy(() => import('./tabs/TrainingTab').then(m => ({ default: m.TrainingTab })))
+const MealsTab       = lazy(() => import('./tabs/MealsTab').then(m => ({ default: m.MealsTab })))
+const PantryTab      = lazy(() => import('./tabs/PantryTab').then(m => ({ default: m.PantryTab })))
+const BodyTab        = lazy(() => import('./tabs/BodyTab').then(m => ({ default: m.BodyTab })))
+const PhotosTab      = lazy(() => import('./tabs/PhotosTab').then(m => ({ default: m.PhotosTab })))
+
+// Modals — lazy-loaded since they start closed
+const EventModal     = lazy(() => import('./components/modals/EventModal').then(m => ({ default: m.EventModal })))
+const MealModal      = lazy(() => import('./components/modals/MealModal').then(m => ({ default: m.MealModal })))
+const PantryModal    = lazy(() => import('./components/modals/PantryModal').then(m => ({ default: m.PantryModal })))
+const SettingsModal  = lazy(() => import('./components/modals/SettingsModal').then(m => ({ default: m.SettingsModal })))
+const OnboardingModal = lazy(() => import('./components/modals/OnboardingModal').then(m => ({ default: m.OnboardingModal })))
 import { LoginScreen } from './components/auth/LoginScreen'
 import { FamilySetupScreen } from './components/auth/FamilySetupScreen'
 
@@ -189,28 +192,30 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
         )}
       </div>
 
-      {tab === 'training' && features.canUseTraining && prefs && member && (
-        <TrainingTab familyId={familyId} member={member} prefs={prefs} />
-      )}
-      {tab === 'meals' && features.canUseNutritionAI && (
-        <MealsTab days={days} meals={meals}
-          onAdd={() => setMealModalOpen(true)}
-          onDelete={deleteMeal} />
-      )}
-      {tab === 'pantry' && features.canUseNutritionAI && (
-        <PantryTab pantry={pantry}
-          onAddManual={() => { setPantryMode('manual'); setPantryModalOpen(true) }}
-          onAddAI={() => { setPantryMode('ai'); setPantryModalOpen(true) }}
-          onDelete={deletePantry}
-          canUseScanner={features.canUseScanner}
-        />
-      )}
-      {tab === 'body' && features.canUseBodyTracking && prefs && member && (
-        <BodyTab familyId={familyId} member={member} prefs={prefs} />
-      )}
-      {tab === 'photos' && features.canUseBodyTracking && prefs && member && (
-        <PhotosTab familyId={familyId} member={member} prefs={prefs} />
-      )}
+      <Suspense fallback={<div className="loading-screen"><div className="spinner" /></div>}>
+        {tab === 'training' && features.canUseTraining && prefs && member && (
+          <TrainingTab familyId={familyId} member={member} prefs={prefs} />
+        )}
+        {tab === 'meals' && features.canUseNutritionAI && (
+          <MealsTab days={days} meals={meals}
+            onAdd={() => setMealModalOpen(true)}
+            onDelete={deleteMeal} />
+        )}
+        {tab === 'pantry' && features.canUseNutritionAI && (
+          <PantryTab pantry={pantry}
+            onAddManual={() => { setPantryMode('manual'); setPantryModalOpen(true) }}
+            onAddAI={() => { setPantryMode('ai'); setPantryModalOpen(true) }}
+            onDelete={deletePantry}
+            canUseScanner={features.canUseScanner}
+          />
+        )}
+        {tab === 'body' && features.canUseBodyTracking && prefs && member && (
+          <BodyTab familyId={familyId} member={member} prefs={prefs} />
+        )}
+        {tab === 'photos' && features.canUseBodyTracking && prefs && member && (
+          <PhotosTab familyId={familyId} member={member} prefs={prefs} />
+        )}
+      </Suspense>
 
       {!features.canUseTraining && !features.canUseNutritionAI && !features.canUseBodyTracking && member && (
         <div className="feature-locked">
@@ -223,7 +228,7 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
       )}
 
       {member && (
-        <>
+        <Suspense fallback={null}>
           <EventModal
             open={eventModalDay !== null}
             familyId={familyId}
@@ -257,16 +262,18 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
             member={member}
             onDone={async (p) => { await savePrefs(p) }}
           />
-        </>
+        </Suspense>
       )}
 
-      <SettingsModal
-        open={settingsOpen}
-        member={member}
-        prefs={prefs}
-        onSavePrefs={savePrefs}
-        onClose={() => setSettingsOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <SettingsModal
+          open={settingsOpen}
+          member={member}
+          prefs={prefs}
+          onSavePrefs={savePrefs}
+          onClose={() => setSettingsOpen(false)}
+        />
+      </Suspense>
     </>
   )
 }
