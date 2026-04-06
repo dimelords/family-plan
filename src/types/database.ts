@@ -166,6 +166,7 @@ export type Database = {
           training_goals: string[]
           updated_at: string
           wake_time: string | null
+          weight_kg: number | null
         }
         Insert: {
           created_at?: string
@@ -188,6 +189,7 @@ export type Database = {
           training_goals?: string[]
           updated_at?: string
           wake_time?: string | null
+          weight_kg?: number | null
         }
         Update: {
           created_at?: string
@@ -210,6 +212,7 @@ export type Database = {
           training_goals?: string[]
           updated_at?: string
           wake_time?: string | null
+          weight_kg?: number | null
         }
         Relationships: [
           { foreignKeyName: "person_preferences_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] },

@@ -33,6 +33,7 @@ export function OnboardingModal({ open, member, onDone }: Props) {
   // Step 1 – basic
   const [dob, setDob] = useState('')
   const [height, setHeight] = useState('')
+  const [weight, setWeight] = useState('')
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('')
 
   // Step 2 – training
@@ -63,6 +64,7 @@ export function OnboardingModal({ open, member, onDone }: Props) {
     return {
       date_of_birth: dob || null,
       height_cm: height ? parseFloat(height) : null,
+      weight_kg: weight ? parseFloat(weight) : null,
       gender: (gender || null) as PersonPreferences['gender'],
       enable_training: wantsTraining ?? true,
       training_goal: (wantsTraining && trainingGoals.length > 0 ? trainingGoals[0] : null) as PersonPreferences['training_goal'],
@@ -103,6 +105,11 @@ export function OnboardingModal({ open, member, onDone }: Props) {
               <label className="form-label">Längd (cm)</label>
               <input className="form-input" type="number" value={height} placeholder="178"
                 onChange={e => setHeight(e.target.value)} min={100} max={250} />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Vikt (kg)</label>
+              <input className="form-input" type="number" value={weight} placeholder="80"
+                onChange={e => setWeight(e.target.value)} min={30} max={300} step={0.5} />
             </div>
             <div className="form-group">
               <label className="form-label">Kön</label>

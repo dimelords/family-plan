@@ -62,17 +62,25 @@ export function MealModal({ open, familyId, day, pantry, recentMeals, currentMea
     const goal = prefs?.meal_goal ?? null
     const mealGoals = prefs?.meal_goals ?? (goal ? [goal] : [])
 
-    // Mifflin-St Jeor BMR estimate (if we have height; assume moderate activity)
-    // We don't store weight in prefs so we use a reasonable default
-    // TDEE ≈ BMR × 1.55 (moderately active)
+    // Mifflin-St Jeor BMR + TDEE calculation (moderately active × 1.55)
+    const weightKg = prefs?.weight_kg ?? null
     let tdeeHint = ''
-    if (heightCm) {
-      // Without weight: rough range based on height + gender
-      if (gender === 'male') {
-        tdeeHint = `Uppskattad TDEE: 2400–2800 kcal/dag (träningsdag +200–300 kcal)`
-      } else if (gender === 'female') {
-        tdeeHint = `Uppskattad TDEE: 1800–2200 kcal/dag (träningsdag +150–250 kcal)`
-      }
+    if (weightKg && heightCm) {
+      const age = prefs?.date_of_birth
+        ? new Date().getFullYear() - new Date(prefs.date_of_birth).getFullYear()
+        : 30
+      const bmr = gender === 'female'
+        ? 10 * weightKg + 6.25 * heightCm - 5 * age - 161
+        : 10 * weightKg + 6.25 * heightCm - 5 * age + 5
+      const tdee = Math.round(bmr * 1.55)
+      const proteinG = Math.round(weightKg * 2.2)
+      tdeeHint = `Exakta beräkningar för ${name} (${weightKg} kg, ${heightCm} cm):
+- TDEE: ~${tdee} kcal/dag (viloddag), ~${tdee + 250} kcal (träningsdag)
+- Proteinmål: ${proteinG}g/dag (2,2 g/kg) – fördela över 4 måltider = ~${Math.round(proteinG/4)}g/måltid`
+    } else if (heightCm) {
+      tdeeHint = gender === 'male'
+        ? 'Uppskattad TDEE: ~2600 kcal/dag (träningsdag ~2850 kcal)'
+        : 'Uppskattad TDEE: ~2000 kcal/dag (träningsdag ~2250 kcal)'
     }
 
     // Combine meal goals + training goals to determine nutrition strategy

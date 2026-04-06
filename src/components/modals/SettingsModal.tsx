@@ -108,8 +108,16 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Dagliga tider</label>
+              <label className="form-label">Kropp &amp; tider</label>
               <div className="settings-time-row">
+                <div className="settings-time-field">
+                  <span className="settings-time-label">⚖️ Vikt (kg)</span>
+                  <input className="form-input" type="number"
+                    defaultValue={prefs.weight_kg ?? ''}
+                    placeholder="80"
+                    min={30} max={300} step={0.5}
+                    onBlur={e => onSavePrefs({ weight_kg: e.target.value ? parseFloat(e.target.value) : null })} />
+                </div>
                 <div className="settings-time-field">
                   <span className="settings-time-label">🌅 Vaknar</span>
                   <input className="form-input" type="time"
@@ -124,7 +132,7 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
                 </div>
               </div>
               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                Används av AI för att anpassa måltidstiming till din dag.
+                Används av AI för exakta protein- och kaloriberäkningar.
               </div>
             </div>
           </>
