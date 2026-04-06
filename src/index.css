@@ -754,6 +754,8 @@ textarea.form-input { resize: vertical; }
 
 .login-btn-google { background: var(--card); color: var(--text); }
 .login-btn-google:hover:not(:disabled) { background: var(--surface2); }
+.login-btn-spotify { background: #1DB954; color: #fff; border-color: #1DB954; }
+.login-btn-spotify:hover:not(:disabled) { background: #1aa34a; }
 
 .login-btn-icon { width: 20px; height: 20px; flex-shrink: 0; }
 
