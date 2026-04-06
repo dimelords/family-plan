@@ -246,6 +246,12 @@ export type Database = {
           { foreignKeyName: "training_sessions_plan_id_fkey"; columns: ["plan_id"]; isOneToOne: false; referencedRelation: "training_plans"; referencedColumns: ["id"] },
         ]
       }
+      withings_tokens: {
+        Row: { id: string; user_id: string; access_token: string; refresh_token: string; expires_at: string; withings_user_id: string | null; last_synced_at: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; user_id: string; access_token: string; refresh_token: string; expires_at: string; withings_user_id?: string | null; last_synced_at?: string | null; created_at?: string; updated_at?: string }
+        Update: { id?: string; user_id?: string; access_token?: string; refresh_token?: string; expires_at?: string; withings_user_id?: string | null; last_synced_at?: string | null; created_at?: string; updated_at?: string }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: { my_family_id: { Args: never; Returns: string } }

@@ -5,7 +5,7 @@ export function LoginScreen() {
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSignIn(provider: 'apple' | 'google' | 'spotify') {
+  async function handleSignIn(provider: 'google' | 'spotify') {
     setLoading(provider)
     setError(null)
     try {
@@ -24,21 +24,6 @@ export function LoginScreen() {
         <p className="login-sub">Planera veckan tillsammans</p>
 
         <div className="login-buttons">
-          <button
-            className="login-btn login-btn-apple"
-            onClick={() => handleSignIn('apple')}
-            disabled={loading !== null}
-          >
-            {loading === 'apple' ? (
-              <span className="login-spinner" />
-            ) : (
-              <svg viewBox="0 0 814 1000" className="login-btn-icon" fill="currentColor">
-                <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.2-150.7-112.1C45.5 749.1 0 663.4 0 580.4c0-165.7 108.2-253.3 214.4-253.3 56.7 0 104.1 37.4 139.8 37.4 33.8 0 86.9-39.5 152.3-39.5 24.5 0 108.2 2.1 160.4 77.2zm-130.5-93.9c28.3-34.1 48.4-81.5 48.4-128.9 0-6.4-.6-12.9-1.9-18.7-45.8 1.7-100.6 30.4-133.3 70-26.4 29.8-48.9 77.2-48.9 125.3 0 7.1 1.3 14.2 1.9 16.4 2.6.5 6.5.9 10.4.9 41.4 0 93.7-28.3 123.4-64.9z"/>
-              </svg>
-            )}
-            Fortsätt med Apple
-          </button>
-
           <button
             className="login-btn login-btn-google"
             onClick={() => handleSignIn('google')}

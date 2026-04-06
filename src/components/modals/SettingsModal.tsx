@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getApiKey, setApiKey } from '../../lib/claude'
 import { useTheme, type ThemePref } from '../../hooks/useTheme'
 import { signOut } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import type { FamilyMember, PersonPreferences } from '../../types/database'
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const WITHINGS_CLIENT_ID = import.meta.env.VITE_WITHINGS_CLIENT_ID as string | undefined
+const CALLBACK_URL = `${SUPABASE_URL}/functions/v1/withings-callback`
 
 interface Props {
   open: boolean
@@ -25,6 +29,18 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [withingsConnected, setWithingsConnected] = useState(false)
+  const [withingsLastSync, setWithingsLastSync] = useState<string | null>(null)
+  const [withingsSyncing, setWithingsSyncing] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    supabase.from('withings_tokens').select('last_synced_at').maybeSingle()
+      .then(({ data }) => {
+        setWithingsConnected(!!data)
+        setWithingsLastSync(data?.last_synced_at ?? null)
+      })
+  }, [open])
 
   if (!open) return null
 
@@ -38,6 +54,36 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
   async function toggleFeature(field: 'enable_training' | 'enable_nutrition_ai' | 'enable_body_tracking') {
     if (!prefs) return
     await onSavePrefs({ [field]: !prefs[field] })
+  }
+
+  async function connectWithings() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || !WITHINGS_CLIENT_ID) return
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: WITHINGS_CLIENT_ID,
+      redirect_uri: CALLBACK_URL,
+      scope: 'user.metrics',
+      state: user.id,
+    })
+    window.location.href = `https://account.withings.com/oauth2_user/authorize2?${params}`
+  }
+
+  async function syncWithings() {
+    setWithingsSyncing(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/withings-sync`, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      const json = await res.json()
+      if (json.synced) {
+        setWithingsLastSync(new Date().toISOString())
+        if (prefs && json.weight_kg) await onSavePrefs({ weight_kg: json.weight_kg })
+      }
+    } finally {
+      setWithingsSyncing(false)
+    }
   }
 
   async function generateInvite() {
@@ -159,6 +205,31 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
             </div>
           </div>
         )}
+
+        {/* Withings */}
+        <div className="form-group">
+          <label className="form-label">Withings</label>
+          {withingsConnected ? (
+            <div className="withings-connected">
+              <span className="withings-status">⌚ Ansluten</span>
+              {withingsLastSync && (
+                <span className="withings-last-sync">
+                  Senast synkad: {new Date(withingsLastSync).toLocaleDateString('sv-SE')}
+                </span>
+              )}
+              <button className="btn-secondary" onClick={syncWithings} disabled={withingsSyncing}>
+                {withingsSyncing ? 'Synkar…' : '🔄 Synka nu'}
+              </button>
+            </div>
+          ) : (
+            <button className="btn-secondary" onClick={connectWithings} disabled={!WITHINGS_CLIENT_ID}>
+              ⌚ Anslut Withings
+            </button>
+          )}
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+            Synkar din vikt automatiskt från Withings-vågen.
+          </div>
+        </div>
 
         {/* API key */}
         <div className="form-group">

@@ -42,6 +42,10 @@ export default function App() {
     () => new URLSearchParams(window.location.search).get('join') ?? undefined,
     [],
   )
+  const withingsResult = useMemo(
+    () => new URLSearchParams(window.location.search).get('withings'),
+    [],
+  )
 
   if (auth.status === 'loading') {
     return <div className="loading-screen"><div className="spinner" /></div>
@@ -49,14 +53,14 @@ export default function App() {
   if (auth.status === 'unauthenticated') {
     return <LoginScreen />
   }
-  return <AuthenticatedApp user={auth.user} joinToken={joinToken} />
+  return <AuthenticatedApp user={auth.user} joinToken={joinToken} withingsResult={withingsResult} />
 }
 
 // ─── Authenticated: resolves family membership ───────────────────────────────
 
 type MemberRef = { id: string; family_id: string } | null | 'loading'
 
-function AuthenticatedApp({ user, joinToken }: { user: User; joinToken?: string }) {
+function AuthenticatedApp({ user, joinToken, withingsResult }: { user: User; joinToken?: string; withingsResult: string | null }) {
   const [memberRef, setMemberRef] = useState<MemberRef>('loading')
 
   useEffect(() => {
@@ -90,12 +94,12 @@ function AuthenticatedApp({ user, joinToken }: { user: User; joinToken?: string 
       />
     )
   }
-  return <MainApp familyId={memberRef.family_id} memberId={memberRef.id} />
+  return <MainApp familyId={memberRef.family_id} memberId={memberRef.id} withingsResult={withingsResult} />
 }
 
 // ─── Main app ────────────────────────────────────────────────────────────────
 
-function MainApp({ familyId, memberId }: { familyId: string; memberId: string }) {
+function MainApp({ familyId, memberId, withingsResult }: { familyId: string; memberId: string; withingsResult: string | null }) {
   const { weekStart, days, selectedDay, setSelectedDay, changeWeek } = useWeek()
   const { members, colorMap } = useFamily(familyId)
   const { events, meals, pantry, recentMeals, status, reload } = useScheduleData(familyId, weekStart)
@@ -109,6 +113,24 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
   const [pantryModalOpen, setPantryModalOpen] = useState(false)
   const [pantryMode, setPantryMode] = useState<PantryMode>('manual')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  // Handle return from Withings OAuth
+  useEffect(() => {
+    if (!withingsResult) return
+    // Clean the URL without reloading
+    const url = new URL(window.location.href)
+    url.searchParams.delete('withings')
+    window.history.replaceState({}, '', url.toString())
+    if (withingsResult === 'connected') {
+      setToast('⌚ Withings ansluten! Vikt synkad.')
+      setSettingsOpen(true)
+    } else if (withingsResult === 'error') {
+      setToast('❌ Withings-anslutning misslyckades.')
+    }
+    const t = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(t)
+  }, [withingsResult])
 
   async function deleteEvent(id: string) {
     await supabase.from('schedule_events').delete().eq('id', id)
@@ -279,6 +301,8 @@ function MainApp({ familyId, memberId }: { familyId: string; memberId: string })
           onClose={() => setSettingsOpen(false)}
         />
       </Suspense>
+
+      {toast && <div className="toast">{toast}</div>}
     </>
   )
 }

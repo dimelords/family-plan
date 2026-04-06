@@ -818,6 +818,17 @@ textarea.form-input { resize: vertical; }
 }
 .btn-signout:hover { color: #ef4444; border-color: #ef4444; }
 
+/* ── Withings ───────────────────────────────────────────────── */
+.withings-connected {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.withings-status {
+  font-size: 14px; font-weight: 600; color: var(--accent);
+}
+.withings-last-sync {
+  font-size: 12px; color: var(--muted);
+}
+
 /* ── Settings time pickers ──────────────────────────────────── */
 .settings-time-row {
   display: flex; gap: 12px;

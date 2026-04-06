@@ -33,7 +33,7 @@ export function useAuth(): AuthState {
   return state
 }
 
-export async function signInWithProvider(provider: 'apple' | 'google' | 'github' | 'spotify') {
+export async function signInWithProvider(provider: 'google' | 'github' | 'spotify') {
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
