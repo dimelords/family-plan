@@ -10,8 +10,13 @@ Deno.serve(async (req) => {
   const state = url.searchParams.get('state')   // user_id encoded as state
   const error = url.searchParams.get('error')
 
+  // Withings probes the callback URL during app registration with no params — return 200
+  if (!code && !error && !state) {
+    return new Response('OK', { status: 200 })
+  }
+
   if (error || !code || !state) {
-    return Response.redirect(`${APP_URL}/?withings=error&reason=${error ?? 'missing_params'}`)
+    return Response.redirect(`${APP_URL}/?withings=error&reason=${error ?? 'missing_params'}`, 302)
   }
 
   const clientId     = Deno.env.get('WITHINGS_CLIENT_ID')!
