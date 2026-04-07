@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
     }).eq('user_id', user.id)
   }
 
-  // Fetch last 30 days of weight measurements
-  const since = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60
+  // Fetch last 90 days of weight measurements
+  const since = Math.floor(Date.now() / 1000) - 90 * 24 * 60 * 60
   const measureRes = await fetch(
     `${WITHINGS_MEASURE_URL}?action=getmeas&meastype=1&category=1&lastupdate=${since}`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
   const measureData = await measureRes.json()
 
   if (measureData.status !== 0 || !measureData.body?.measuregrps?.length) {
-    return new Response(JSON.stringify({ synced: false, reason: 'no_data' }), {
+    return new Response(JSON.stringify({ synced: false, reason: 'no_recent_data' }), {
       headers: { 'Content-Type': 'application/json' },
     })
   }

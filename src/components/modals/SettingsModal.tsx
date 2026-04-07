@@ -32,6 +32,7 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
   const [withingsConnected, setWithingsConnected] = useState(false)
   const [withingsLastSync, setWithingsLastSync] = useState<string | null>(null)
   const [withingsSyncing, setWithingsSyncing] = useState(false)
+  const [withingsSyncMsg, setWithingsSyncMsg] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -71,6 +72,7 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
 
   async function syncWithings() {
     setWithingsSyncing(true)
+    setWithingsSyncMsg(null)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${SUPABASE_URL}/functions/v1/withings-sync`, {
@@ -80,7 +82,14 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
       if (json.synced) {
         setWithingsLastSync(new Date().toISOString())
         if (prefs && json.weight_kg) await onSavePrefs({ weight_kg: json.weight_kg })
+        setWithingsSyncMsg(`✓ ${json.weight_kg} kg synkad (${json.measurements} mätning${json.measurements !== 1 ? 'ar' : ''})`)
+      } else if (json.reason === 'no_recent_data') {
+        setWithingsSyncMsg('Inga nya mätningar hittades. Väg dig på vågen och synka igen.')
+      } else {
+        setWithingsSyncMsg(`Kunde inte synka: ${json.error ?? json.reason ?? 'okänt fel'}`)
       }
+    } catch (e) {
+      setWithingsSyncMsg(`Fel: ${e instanceof Error ? e.message : 'okänt'}`)
     } finally {
       setWithingsSyncing(false)
     }
@@ -220,6 +229,11 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
               <button className="btn-secondary" onClick={syncWithings} disabled={withingsSyncing}>
                 {withingsSyncing ? 'Synkar…' : '🔄 Synka nu'}
               </button>
+              {withingsSyncMsg && (
+                <span style={{ fontSize: 12, color: withingsSyncMsg.startsWith('✓') ? 'var(--accent)' : 'var(--muted)', marginTop: 4 }}>
+                  {withingsSyncMsg}
+                </span>
+              )}
             </div>
           ) : (
             <button className="btn-secondary" onClick={connectWithings} disabled={!WITHINGS_CLIENT_ID}>
