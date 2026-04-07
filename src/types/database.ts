@@ -28,6 +28,9 @@ export type Database = {
           thigh_cm: number | null
           waist_cm: number | null
           weight_kg: number | null
+          muscle_mass_kg: number | null
+          water_pct: number | null
+          bone_mass_kg: number | null
         }
         Insert: {
           arm_cm?: number | null
@@ -44,6 +47,9 @@ export type Database = {
           thigh_cm?: number | null
           waist_cm?: number | null
           weight_kg?: number | null
+          muscle_mass_kg?: number | null
+          water_pct?: number | null
+          bone_mass_kg?: number | null
         }
         Update: {
           arm_cm?: number | null
@@ -60,6 +66,9 @@ export type Database = {
           thigh_cm?: number | null
           waist_cm?: number | null
           weight_kg?: number | null
+          muscle_mass_kg?: number | null
+          water_pct?: number | null
+          bone_mass_kg?: number | null
         }
         Relationships: [{ foreignKeyName: "body_log_family_id_fkey"; columns: ["family_id"]; isOneToOne: false; referencedRelation: "families"; referencedColumns: ["id"] }]
       }

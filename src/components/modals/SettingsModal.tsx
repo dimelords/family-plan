@@ -82,7 +82,10 @@ export function SettingsModal({ open, member, prefs, onSavePrefs, onClose }: Pro
       if (json.synced) {
         setWithingsLastSync(new Date().toISOString())
         if (prefs && json.weight_kg) await onSavePrefs({ weight_kg: json.weight_kg })
-        setWithingsSyncMsg(`✓ ${json.weight_kg} kg synkad (${json.measurements} mätning${json.measurements !== 1 ? 'ar' : ''})`)
+        const parts: string[] = [`${json.weight_kg} kg`]
+        if (json.fat_pct)        parts.push(`${json.fat_pct}% fett`)
+        if (json.muscle_mass_kg) parts.push(`${json.muscle_mass_kg} kg muskler`)
+        setWithingsSyncMsg(`✓ ${parts.join(' · ')} (${json.measurements} mätning${json.measurements !== 1 ? 'ar' : ''})`)
       } else if (json.reason === 'no_recent_data') {
         setWithingsSyncMsg('Inga nya mätningar hittades. Väg dig på vågen och synka igen.')
       } else {

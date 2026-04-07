@@ -13,11 +13,12 @@ interface Props {
   prefs: PersonPreferences
 }
 
-type Metric = 'weight_kg' | 'estimated_bf_pct' | 'waist_cm'
+type Metric = 'weight_kg' | 'estimated_bf_pct' | 'muscle_mass_kg' | 'waist_cm'
 
 const METRIC_LABELS: Record<Metric, string> = {
   weight_kg: 'Vikt (kg)',
   estimated_bf_pct: 'Fett %',
+  muscle_mass_kg: 'Muskel (kg)',
   waist_cm: 'Midja (cm)',
 }
 
@@ -109,6 +110,7 @@ export function BodyTab({ familyId, member, prefs }: Props) {
       date: e.logged_at.slice(5),  // MM-DD
       weight_kg: e.weight_kg,
       estimated_bf_pct: e.estimated_bf_pct,
+      muscle_mass_kg: e.muscle_mass_kg,
       waist_cm: e.waist_cm,
     })),
     [entries]
@@ -132,6 +134,18 @@ export function BodyTab({ familyId, member, prefs }: Props) {
                 <div className="body-stat-chip">
                   <span className="body-stat-value">{latest.estimated_bf_pct}%</span>
                   <span className="body-stat-label">Fett</span>
+                </div>
+              )}
+              {latest.muscle_mass_kg && (
+                <div className="body-stat-chip">
+                  <span className="body-stat-value">{latest.muscle_mass_kg} kg</span>
+                  <span className="body-stat-label">Muskler</span>
+                </div>
+              )}
+              {latest.water_pct && (
+                <div className="body-stat-chip">
+                  <span className="body-stat-value">{latest.water_pct}%</span>
+                  <span className="body-stat-label">Vatten</span>
                 </div>
               )}
               {prefs.height_cm && latest.weight_kg && (() => {
@@ -205,9 +219,11 @@ export function BodyTab({ familyId, member, prefs }: Props) {
               <div key={e.id} className="body-entry-row">
                 <span className="body-entry-date">{e.logged_at}</span>
                 <div className="body-entry-values">
-                  {e.weight_kg    && <span>{e.weight_kg} kg</span>}
-                  {e.estimated_bf_pct && <span>{e.estimated_bf_pct}% fett</span>}
-                  {e.waist_cm    && <span>midja {e.waist_cm} cm</span>}
+                  {e.weight_kg         && <span>{e.weight_kg} kg</span>}
+                  {e.estimated_bf_pct  && <span>{e.estimated_bf_pct}% fett</span>}
+                  {e.muscle_mass_kg    && <span>{e.muscle_mass_kg} kg muskler</span>}
+                  {e.water_pct         && <span>{e.water_pct}% vatten</span>}
+                  {e.waist_cm          && <span>midja {e.waist_cm} cm</span>}
                   {e.chest_cm    && <span>bröst {e.chest_cm} cm</span>}
                   {e.arm_cm      && <span>arm {e.arm_cm} cm</span>}
                   {e.thigh_cm    && <span>lår {e.thigh_cm} cm</span>}
