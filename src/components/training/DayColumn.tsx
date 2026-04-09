@@ -18,14 +18,16 @@ export function DayColumn({ date, label, sessions, isToday, onToggleComplete, on
   return (
     <div className={`day-column${isToday ? ' today' : ''}${isOver ? ' drop-over' : ''}`} ref={setNodeRef}>
       <div className="day-col-label">{label}</div>
-      <SortableContext items={sessions.map(s => s.id)} strategy={verticalListSortingStrategy}>
-        {sessions.length === 0
-          ? <div className="day-col-empty">Vila</div>
-          : sessions.map(s => (
-              <SessionCard key={s.id} session={s} onToggleComplete={onToggleComplete} onExpand={onExpand} />
-            ))
-        }
-      </SortableContext>
+      <div className="day-col-sessions">
+        <SortableContext items={sessions.map(s => s.id)} strategy={verticalListSortingStrategy}>
+          {sessions.length === 0
+            ? <div className="day-col-empty">Vila</div>
+            : sessions.map(s => (
+                <SessionCard key={s.id} session={s} onToggleComplete={onToggleComplete} onExpand={onExpand} />
+              ))
+          }
+        </SortableContext>
+      </div>
     </div>
   )
 }

@@ -1,7 +1,9 @@
 import { jsonrepair } from 'jsonrepair'
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
-const MODEL = 'claude-haiku-4-5-20251001'
+const MODEL_HAIKU   = 'claude-haiku-4-5-20251001'
+const MODEL_SONNET  = 'claude-sonnet-4-6'
+export { MODEL_SONNET }
 
 export function getApiKey(): string | null {
   return localStorage.getItem('anthropic_key')
@@ -16,6 +18,7 @@ export async function claudeCall(
   system: string,
   userContent: AnthropicContent | string,
   maxTokens = 600,
+  model = MODEL_HAIKU,
 ): Promise<string> {
   const key = getApiKey()
   if (!key) throw new Error('Ingen API-nyckel. Lägg till under ⚙️')
@@ -30,7 +33,7 @@ export async function claudeCall(
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-direct-browser-access': 'true',
     },
-    body: JSON.stringify({ model: MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
+    body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] }),
   })
 
   const data = await res.json()

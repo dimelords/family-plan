@@ -191,33 +191,38 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
         onSwipe={swipeDay}
       />
 
-      <div className="tabs">
+      <nav className="tabs">
         {features.canUseTraining && (
           <button className={`tab-btn${tab === 'training' ? ' active' : ''}`} onClick={() => setTab('training')}>
-            💪 Träning
+            <span className="tab-icon">💪</span>
+            <span>Träning</span>
           </button>
         )}
         {features.canUseNutritionAI && (
           <button className={`tab-btn${tab === 'meals' ? ' active' : ''}`} onClick={() => setTab('meals')}>
-            🍽️ Mat
+            <span className="tab-icon">🍽️</span>
+            <span>Mat</span>
           </button>
         )}
         {features.canUseNutritionAI && (
           <button className={`tab-btn${tab === 'pantry' ? ' active' : ''}`} onClick={() => setTab('pantry')}>
-            🛒 Skafferi
+            <span className="tab-icon">🛒</span>
+            <span>Skafferi</span>
           </button>
         )}
         {features.canUseBodyTracking && (
           <button className={`tab-btn${tab === 'body' ? ' active' : ''}`} onClick={() => setTab('body')}>
-            📊 Kropp
+            <span className="tab-icon">📊</span>
+            <span>Kropp</span>
           </button>
         )}
         {features.canUseBodyTracking && (
           <button className={`tab-btn${tab === 'photos' ? ' active' : ''}`} onClick={() => setTab('photos')}>
-            📷 Foton
+            <span className="tab-icon">📷</span>
+            <span>Foton</span>
           </button>
         )}
-      </div>
+      </nav>
 
       <Suspense fallback={<div className="loading-screen"><div className="spinner" /></div>}>
         {tab === 'training' && features.canUseTraining && prefs && member && (

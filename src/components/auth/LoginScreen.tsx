@@ -20,8 +20,9 @@ export function LoginScreen() {
     <div className="login-screen">
       <div className="login-card">
         <div className="login-logo">🗓️</div>
-        <h1 className="login-title">Familjeveckan</h1>
+        <h1 className="login-title">Familje<span>veckan</span></h1>
         <p className="login-sub">Planera veckan tillsammans</p>
+        <div className="login-divider" />
 
         <div className="login-buttons">
           <button

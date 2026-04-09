@@ -15,11 +15,33 @@ interface Props {
 const SYSTEM_PROMPT = `Du är en kock. Returnera receptet som JSON med exakt dessa fält:
 {
   "title": "string",
+  "description": "string (kort beskrivning, 1 mening, max 12 ord, på svenska)",
   "servings": number,
   "ingredients": [{ "name": "string", "amount": number, "unit": "string" }],
   "steps": [{ "title": "string", "description": "string", "timer_seconds": number | null }]
 }
 Inga markdown-fences. Bara JSON. Alla strängar på svenska.`
+
+function mealEmoji(desc: string): string {
+  const d = desc.toLowerCase()
+  if (/pasta|spagetti|lasagne|ravioli|rigatoni|tagliatelle/.test(d)) return '🍝'
+  if (/pizza/.test(d)) return '🍕'
+  if (/kyckling|chicken/.test(d)) return '🍗'
+  if (/lax|tonfisk|fisk|räkor|skaldjur/.test(d)) return '🐟'
+  if (/sallad/.test(d)) return '🥗'
+  if (/soppa|sopa/.test(d)) return '🍲'
+  if (/biff|kött|stek|hamburgare|köttfärs/.test(d)) return '🥩'
+  if (/ägg|shakshuka|omelett/.test(d)) return '🍳'
+  if (/ris|curry/.test(d)) return '🍛'
+  if (/tacos|burrito|quesadilla/.test(d)) return '🌮'
+  if (/smörgås|toast|macka|sandwich/.test(d)) return '🥪'
+  if (/wok/.test(d)) return '🥡'
+  if (/grönsak|vegetarisk|vegan|tofu/.test(d)) return '🥦'
+  if (/frukost|havregryn|gröt/.test(d)) return '🥣'
+  if (/pannkaka|våffla/.test(d)) return '🥞'
+  if (/sushi|maki|nigiri/.test(d)) return '🍱'
+  return '🍽️'
+}
 
 export function RecipeModal({ open, meal, familyId, onClose }: Props) {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
@@ -130,12 +152,10 @@ export function RecipeModal({ open, meal, familyId, onClose }: Props) {
   return (
     <div className="modal-overlay open recipe-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal recipe-modal">
-        <div className="recipe-modal-header">
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
         {loading && (
           <div className="recipe-loading">
+            <button className="modal-close recipe-close-btn" onClick={onClose}>✕</button>
+            <div className="recipe-hero-emoji" style={{ fontSize: 56 }}>{mealEmoji(meal?.description ?? '')}</div>
             <div className="spinner" />
             <p>Genererar recept…</p>
           </div>
@@ -143,6 +163,7 @@ export function RecipeModal({ open, meal, familyId, onClose }: Props) {
 
         {error && (
           <div className="recipe-error">
+            <button className="modal-close recipe-close-btn" onClick={onClose}>✕</button>
             <p>⚠️ {error}</p>
             {meal && <button className="btn-secondary" onClick={() => loadOrGenerate(meal)}>Försök igen</button>}
           </div>
@@ -150,10 +171,12 @@ export function RecipeModal({ open, meal, familyId, onClose }: Props) {
 
         {recipe && !loading && (
           <>
-            {/* Title */}
-            <div className="recipe-title-block">
+            {/* Hero */}
+            <div className="recipe-hero">
+              <button className="modal-close recipe-close-btn" onClick={onClose}>✕</button>
+              <div className="recipe-hero-emoji">{mealEmoji(meal?.description ?? '')}</div>
               <h2 className="recipe-title">{recipe.title}</h2>
-              <p className="recipe-source">{meal?.description}</p>
+              <p className="recipe-tagline">{recipe.description ?? meal?.description}</p>
             </div>
 
             {/* Servings */}
@@ -181,7 +204,7 @@ export function RecipeModal({ open, meal, familyId, onClose }: Props) {
 
             {/* Steps */}
             <section className="recipe-section">
-              <h3 className="recipe-section-title">Steg</h3>
+              <h3 className="recipe-section-title">Tillvägagångssätt</h3>
               <ol className="recipe-steps">
                 {(recipe.steps as RecipeStep[]).map((step, i) => {
                   const isActive = activeTimer?.idx === i

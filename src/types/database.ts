@@ -309,6 +309,7 @@ export interface RecipeStep {
 
 export interface Recipe {
   title: string
+  description?: string
   servings: number
   ingredients: RecipeIngredient[]
   steps: RecipeStep[]

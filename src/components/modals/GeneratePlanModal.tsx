@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { claudeCall, parseJson, getApiKey } from '../../lib/claude'
+import { claudeCall, parseJson, getApiKey, MODEL_SONNET } from '../../lib/claude'
 import { dateStr } from '../../lib/dates'
 import { FULL_DAY_NAMES } from '../../lib/constants'
 import type { PersonPreferences, TrainingPlan, Exercise } from '../../types/database'
@@ -54,46 +54,41 @@ export function GeneratePlanModal({ open, familyId, person, prefs, previousPlan,
     if (!getApiKey()) { setError('Ingen API-nyckel. Lägg till under ⚙️'); return }
     setGenerating(true); setError(''); setPreview(null)
 
-    const system = `Du är en certifierad träningsexpert med djup kunskap om 2025 träningsvetenskap för hypertrofi och styrka.
+    const system = `Du är en certifierad personlig tränare. Skapa välstrukturerade träningsplaner på ren svenska.
 
-## Vetenskapliga principer du ALLTID följer
+## Språkregler – följs utan undantag
+- Skriv på svenska. Etablerade träningstermer på engelska är OK: "deadlift", "squat", "bench press", "pull-up", "chin-up", "lat pulldown", "Romanian deadlift", "face pull", "dips" etc.
+- Inga norska ord (inte "forsiktig" – korrekt svenska är "försiktig"). Inga slumpmässiga engelska adjektiv i löptext ("light", "heavy", "backside focus").
+- Inga versaler i löptext. Undvik "VIKTIGT:", "OBS:" osv.
+- Notes ska vara korta – max 1–2 meningar med praktiska tips
 
-**Progressiv överbelastning (primär drivkraft):**
-- Öka antalet reps ELLER vikten varje vecka – båda ger liknande hypertrofi
-- Spåra: vecka 1→2→3 progressivt svårare, vecka 4 = deload
+## Träningsprinciper
 
-**Volymlankmarks per muskelgrupp per vecka:**
-- Minsta effektiva volym (MEV): 10–12 set
-- Optimal tillväxt: 12–20 set  
-- Maximalt återhämtningsbart (MRV): 20–25 set
-- Börja vid MEV, bygg mot optimal
+**Volym per muskelgrupp/vecka:** Börja vid 10–12 set, bygg mot 15–20 set vecka 3. Vecka 4 = deload (halvera antalet set).
 
-**Intensitetszoner:**
-- Styrka: 1–6 reps @ 85–100% 1RM, 3–5 min vila
-- Hypertrofi (primär zon): 6–12 reps @ 70–85% 1RM, 2–3 min vila
-- Metabolisk/pump: 12–20+ reps @ 60–70% 1RM, 1–2 min vila
+**Rep-zoner:** Styrka 3–6 reps, hypertrofi 6–12 reps, uthållighet 12–20 reps.
 
-**Övningsurval:**
-- Compound-övningar ALLTID först i passet (knäböj, marklyft, bänkpress, axelpress, rodd)
-- 3–5 compound-övningar + 2–4 isolationsövningar per pass
-- Full rörelsebana för maximal muskelstimulering
+**Ordning i passet:** Sammansatta övningar (knäböj, marklyft, press, rodd) alltid före isolationsövningar.
 
-**Splittval efter erfarenhet:**
-- Nybörjare (< 1 år): Helkropp 3x/vecka (A/B-variation) – tränar varje muskelgrupp 3x/v
-- Medel (1–3 år): Överkropp/Underkropp 4x/vecka – 2x per muskelgrupp
-- Erfaren (3+ år): Push/Pull/Ben 6x/vecka – 2x per muskelgrupp med varierad intensitet
+**Periodisering:**
+- Vecka 1: Grundvolym, lär in teknik
+- Vecka 2: Lägg till 1 rep per set på alla övningar
+- Vecka 3: Tyngsta veckan, lägg till ytterligare 1 rep eller mer vikt
+- Vecka 4: Deload – samma övningar, halvera antalet set
 
-**4-veckors periodisering:**
-- Vecka 1: Introduktion/teknik, lägre intensitet, bygg MEV
-- Vecka 2: Volymökning, lägg till 1–2 set per pass
-- Vecka 3: Intensitetstopp, tyngst vecka
-- Vecka 4: DELOAD – reducera volym 40–50%, behåll intensitet, aktiv återhämtning
+**Splitval:**
+- Nybörjare: Helkropp A/B, 3 dagar/vecka
+- Medel: Överkropp/Underkropp, 4 dagar/vecka
+- Erfaren: Press/Drag/Ben, 5–6 dagar/vecka
 
-**Biomek/form-cues att inkludera i notes:**
-- Knäböj: "Sprid golvet, knän utåt, bröst uppåt"
-- Marklyft: "Lats täta, tryck golvet ifrån dig, höfter och axlar stiger jämnt"
-- Bänkpress: "Skulderblad intryckta, bendriv, sänk till nippellinjen"
-- Axelpress: "Kläm sätesmusklerna, armbågar lätt framåt"
+**Form-tips för vanliga övningar (använd som mall):**
+- Knäböj: "Tryck knäna utåt, håll bröstet upprätt, full djuphet."
+- Marklyft: "Håll ryggen rak, tryck golvet ifrån dig, höfter och axlar stiger samtidigt."
+- Bänkpress: "Skulderblad bakåt och nedåt, sänk stången till nedre bröstkorgen."
+- Axelpress: "Spänn magen, pressa rakt upp utan att luta dig bakåt."
+- Benpress: "Fötterna höftbrett, knäna följer tårna, full rörelse utan att låsa ut."
+- Benextension: "Kontrollerad rörelse, håll lätt vikt för att skydda knäleden."
+- Benböjning liggande: "Pressa hälen mot maskinen, känn hamstrings hela rörelsen."
 
 Svara BARA med JSON-array utan markdown-kodblock.`
 
@@ -126,17 +121,17 @@ ${extraContext ? `\nExtra önskemål/begränsningar: ${extraContext}` : ''}
 - Vecka 1–3: Progressivt svårare (fler reps ELLER mer vikt varje vecka på samma övningar)
 - Vecka 4: Deload – behåll samma övningar men 40–50% lägre volym (färre set), lite lättare
 - Compound-övningar ALLTID först i varje pass
-- Sets/reps: använd format "4x8-10" (set x reps-intervall)
-- notes på övningsnivå: inkludera viktiga form-cues på svenska
-- notes på passnivå: berätta vad fokus är (t.ex. "Vecka 2 – lägg till 1 rep per set")
+- Sets/reps: använd format "4x8-10" (set × rep-intervall)
+- notes på övningsnivå: kort formtips på svenska, max 1–2 meningar, inga versaler
+- notes på passnivå: en mening om veckans fokus, t.ex. "Vecka 2 – lägg till 1 rep per set på alla övningar."
 
 Returnera JSON-array där day_offset=0 är startdatum, day_offset=1 nästa dag osv:
-[{"day_offset":0,"workout_type":"Helkropp A","exercises":[{"name":"Knäböj","sets":4,"reps":"8-10","notes":"Sprid golvet, knän utåt"},...],"notes":"Vecka 1 – lär in rörelserna, fokus på teknik"},...]
+[{"day_offset":0,"workout_type":"Helkropp A","exercises":[{"name":"Knäböj","sets":4,"reps":"8-10","notes":"Tryck knäna utåt och håll bröstet upprätt."},...],"notes":"Vecka 1 – lär in teknik med lätt vikt."},...]
 
 Inkludera ALLA pass för alla 4 veckor. Returnera bara JSON-array.`
 
     try {
-      const text = await claudeCall(system, prompt, 8192)
+      const text = await claudeCall(system, prompt, 8192, MODEL_SONNET)
       setPreview(parseJson<AISession[]>(text))
     } catch (e) { setError((e as Error).message) }
     setGenerating(false)
