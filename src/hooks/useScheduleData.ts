@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { dateStr } from '../lib/dates'
 import type { ScheduleEvent, MealPlan, Pantry } from '../types/database'
 
-export function useScheduleData(familyId: string | null, weekStart: Date) {
+export function useScheduleData(familyId: string | null, from: string, to: string) {
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [meals, setMeals] = useState<MealPlan[]>([])
   const [recentMeals, setRecentMeals] = useState<MealPlan[]>([])
@@ -12,10 +12,6 @@ export function useScheduleData(familyId: string | null, weekStart: Date) {
 
   const load = useCallback(async () => {
     if (!familyId) return
-    const from = dateStr(weekStart)
-    const to = new Date(weekStart)
-    to.setDate(to.getDate() + 6)
-    const toStr = dateStr(to)
 
     const pastDate = new Date()
     pastDate.setDate(pastDate.getDate() - 10)
@@ -23,9 +19,9 @@ export function useScheduleData(familyId: string | null, weekStart: Date) {
     try {
       const [evRes, mealRes, pantryRes, pastRes] = await Promise.all([
         supabase.from('schedule_events')
-          .select('*').eq('family_id', familyId).gte('day', from).lte('day', toStr).order('time_start'),
+          .select('*').eq('family_id', familyId).gte('day', from).lte('day', to).order('time_start'),
         supabase.from('meal_plan')
-          .select('*').eq('family_id', familyId).gte('day', from).lte('day', toStr).order('day').order('meal_type'),
+          .select('*').eq('family_id', familyId).gte('day', from).lte('day', to).order('day').order('meal_type'),
         supabase.from('pantry')
           .select('*').eq('family_id', familyId).order('is_leftover', { ascending: false }).order('added_date', { ascending: false }),
         supabase.from('meal_plan')
@@ -43,7 +39,7 @@ export function useScheduleData(familyId: string | null, weekStart: Date) {
     } catch (e) {
       setStatus({ ok: false, message: 'Fel: ' + (e as Error).message })
     }
-  }, [familyId, weekStart])
+  }, [familyId, from, to])
 
   useEffect(() => { load() }, [load])
 

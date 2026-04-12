@@ -15,5 +15,14 @@ export function useWeek() {
     })
   }
 
-  return { weekStart, days, selectedDay, setSelectedDay, changeWeek }
+  function goToDate(date: Date) {
+    setWeekStart(getMonday(date))
+    setSelectedDay((date.getDay() + 6) % 7)
+  }
+
+  function goToMonth(date: Date) {
+    setWeekStart(getMonday(date))
+  }
+
+  return { weekStart, days, selectedDay, setSelectedDay, changeWeek, goToDate, goToMonth }
 }

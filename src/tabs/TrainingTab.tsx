@@ -21,8 +21,7 @@ export function TrainingTab({ familyId, member, prefs }: Props) {
 
   return (
     <div className="card">
-      <div className="sec-label">
-        Träningsplan
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
         <button className="add-btn" onClick={() => setGenerateOpen(true)}>
           {plan ? '+ Ny plan' : '+ Generera'}
         </button>

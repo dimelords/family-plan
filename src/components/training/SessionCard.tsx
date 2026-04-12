@@ -8,11 +8,6 @@ interface Props {
   onExpand: (session: TrainingSession) => void
 }
 
-// Strip parenthetical equipment info for compact display
-function shortName(name: string): string {
-  return name.split('(')[0].trim()
-}
-
 export function SessionCard({ session, onToggleComplete, onExpand }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: session.id,
@@ -35,19 +30,11 @@ export function SessionCard({ session, onToggleComplete, onExpand }: Props) {
         onClick={e => e.stopPropagation()}>⠿</div>
       <div className="session-body">
         <div className="session-type">{session.workout_type}</div>
-        <div className="session-exercises">
-          {((session.exercises ?? []) as unknown as Exercise[]).slice(0, 3).map((e: Exercise, i: number) => (
-            <div key={i} className="session-ex-row">
-              <span className="session-ex-name">{shortName(e.name)}</span>
-              <span className="session-ex-sets">{e.sets}×{e.reps}</span>
-            </div>
-          ))}
-          {((session.exercises ?? []) as unknown as Exercise[]).length > 3 && (
-            <div className="session-ex-row muted">
-              <span className="session-ex-name">+{((session.exercises ?? []) as unknown as Exercise[]).length - 3} övningar till</span>
-            </div>
-          )}
-        </div>
+        {((session.exercises ?? []) as unknown as Exercise[]).length > 0 && (
+          <div className="session-ex-count">
+            {((session.exercises ?? []) as unknown as Exercise[]).length} övningar
+          </div>
+        )}
       </div>
       <button
         className={`session-check${session.completed ? ' done' : ''}`}

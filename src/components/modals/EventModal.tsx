@@ -42,7 +42,12 @@ export function EventModal({ open, familyId, day, members, onClose, onSaved }: P
     <div className="modal-overlay open" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <div className="modal-header">
-          <div className="modal-title">Lägg till aktivitet</div>
+          <div>
+            <div className="modal-title">Lägg till aktivitet</div>
+            <div className="modal-subtitle">
+              {day.toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+          </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="form-group">

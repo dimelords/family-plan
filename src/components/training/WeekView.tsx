@@ -4,10 +4,9 @@ import {
   DndContext, DragOverlay,
   PointerSensor, TouchSensor, useSensor, useSensors, closestCenter,
 } from '@dnd-kit/core'
-import type { DragEndEvent, DragOverEvent } from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
 import { DayColumn } from './DayColumn'
 import { SessionCard } from './SessionCard'
-import { DAY_NAMES } from '../../lib/constants'
 import { dateStr } from '../../lib/dates'
 import type { TrainingPlan, TrainingSession } from '../../types/database'
 
@@ -48,24 +47,17 @@ function humanDate(ds: string): string {
   return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`
 }
 
-function getWeeks(plan: TrainingPlan): Date[][] {
-  const weeks: Date[][] = []
-  const start = new Date(plan.start_date)
-  for (let w = 0; w < 4; w++) {
-    const week: Date[] = []
-    for (let d = 0; d < 7; d++) {
-      const day = new Date(start)
-      day.setDate(day.getDate() + w * 7 + d)
-      week.push(day)
-    }
-    weeks.push(week)
-  }
-  return weeks
+function getVisibleDays(): string[] {
+  return Array.from({ length: 4 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    d.setHours(0, 0, 0, 0)
+    return dateStr(d)
+  })
 }
 
-export function WeekView({ plan, sessions, onMove, onDelete, onToggleComplete, onExpand, familyId }: Props) {
+export function WeekView({ sessions, onMove, onDelete, onToggleComplete, onExpand, familyId }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [currentWeek, setCurrentWeek] = useState(0)
   const [conflict, setConflict] = useState<Conflict | null>(null)
   const [mealPrompt, setMealPrompt] = useState<MealPrompt | null>(null)
 
@@ -90,11 +82,9 @@ export function WeekView({ plan, sessions, onMove, onDelete, onToggleComplete, o
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   )
 
-  const weeks = getWeeks(plan)
-  const today = dateStr(new Date())
+  const visibleDays = getVisibleDays()
+  const today = visibleDays[0]
   const activeSession = activeId ? sessions.find(s => s.id === activeId) : null
-
-  const weekDays = weeks[currentWeek]
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -105,7 +95,6 @@ export function WeekView({ plan, sessions, onMove, onDelete, onToggleComplete, o
     const dragged = sessions.find(s => s.id === String(active.id))
     if (!dragged) return
 
-    // Resolve target date
     let targetDate: string
     if (overId.match(/^\d{4}-\d{2}-\d{2}$/)) {
       targetDate = overId
@@ -130,17 +119,6 @@ export function WeekView({ plan, sessions, onMove, onDelete, onToggleComplete, o
     }
   }
 
-  function handleDragOver(event: DragOverEvent) {
-    const { over } = event
-    if (!over) return
-    const overId = String(over.id)
-    const overDate = overId.match(/^\d{4}-\d{2}-\d{2}$/) ? overId
-      : sessions.find(s => s.id === overId)?.scheduled_date
-    if (!overDate) return
-    const weekIdx = weeks.findIndex(w => w.some(d => dateStr(d) === overDate))
-    if (weekIdx >= 0 && weekIdx !== currentWeek) setCurrentWeek(weekIdx)
-  }
-
   function resolveConflict(choice: 'replace' | 'push') {
     if (!conflict) return
     const oldDate = conflict.dragged.scheduled_date
@@ -155,42 +133,22 @@ export function WeekView({ plan, sessions, onMove, onDelete, onToggleComplete, o
     checkMeals(oldDate, conflict.targetDate)
   }
 
-  const completedCount = sessions.filter(s => s.completed).length
-
   return (
     <div className="week-view">
-      {/* Week navigation */}
-      <div className="week-view-nav">
-        <button className="nav-btn" disabled={currentWeek === 0} onClick={() => setCurrentWeek(w => w - 1)}>‹</button>
-        <div className="week-view-title">
-          Vecka {currentWeek + 1}{currentWeek === 3 ? ' – Deload' : ''}
-          <span className="week-view-dates">
-            {dateStr(weekDays[0])} – {dateStr(weekDays[6])}
-          </span>
-        </div>
-        <button className="nav-btn" disabled={currentWeek === 3} onClick={() => setCurrentWeek(w => w + 1)}>›</button>
-      </div>
-
-      <div className="plan-progress">
-        <div className="plan-progress-bar" style={{ width: `${(completedCount / sessions.length) * 100}%` }} />
-        <span className="plan-progress-label">{completedCount}/{sessions.length} pass klara</span>
-      </div>
-
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragStart={e => setActiveId(String(e.active.id))}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="day-columns">
-          {weekDays.map((d) => {
-            const ds = dateStr(d)
+          {visibleDays.map((ds) => {
+            const d = new Date(ds + 'T12:00:00')
             return (
               <DayColumn
                 key={ds}
                 date={ds}
-                label={`${DAY_NAMES[(d.getDay() + 6) % 7]} ${d.getDate()}`}
+                label={d.toLocaleString('sv-SE', { weekday: 'long', day: 'numeric', month: 'numeric' })}
                 sessions={sessions.filter(s => s.scheduled_date === ds)}
                 isToday={ds === today}
                 onToggleComplete={onToggleComplete}

@@ -29,3 +29,19 @@ export function weekNum(d: Date): number {
 export function todayDayIndex(): number {
   return (new Date().getDay() + 6) % 7
 }
+
+// First Monday on or before the 1st of the month containing d
+export function calendarGridStart(d: Date): Date {
+  const first = new Date(d.getFullYear(), d.getMonth(), 1)
+  return getMonday(first)
+}
+
+// Last Sunday on or after the last day of the month containing d
+export function calendarGridEnd(d: Date): Date {
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+  const day = last.getDay()
+  const daysToSun = day === 0 ? 0 : 7 - day
+  const end = new Date(last)
+  end.setDate(end.getDate() + daysToSun)
+  return end
+}

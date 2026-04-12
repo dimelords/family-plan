@@ -8,11 +8,11 @@ import { useCurrentMember } from './hooks/useCurrentMember'
 import { usePersonFeatures } from './hooks/usePersonFeatures'
 import { useAuth } from './hooks/useAuth'
 import { useTrainingPlan } from './hooks/useTrainingPlan'
-import { dateStr } from './lib/dates'
+import { calendarGridStart, calendarGridEnd, dateStr } from './lib/dates'
 import { supabase } from './lib/supabase'
 import { Header } from './components/Header'
 import { StatusBar } from './components/StatusBar'
-import { DayStrip } from './components/DayStrip'
+import { MonthCalendar } from './components/MonthCalendar'
 import { DayPanel } from './components/DayPanel'
 // Tabs — lazy-loaded so only the active tab's code is fetched
 const TrainingTab    = lazy(() => import('./tabs/TrainingTab').then(m => ({ default: m.TrainingTab })))
@@ -101,9 +101,19 @@ function AuthenticatedApp({ user, joinToken, withingsResult }: { user: User; joi
 // ─── Main app ────────────────────────────────────────────────────────────────
 
 function MainApp({ familyId, memberId, withingsResult }: { familyId: string; memberId: string; withingsResult: string | null }) {
-  const { weekStart, days, selectedDay, setSelectedDay, changeWeek } = useWeek()
+  const { weekStart, days, selectedDay, setSelectedDay, goToDate, goToMonth } = useWeek()
   const { members, colorMap } = useFamily(familyId)
-  const { events, meals, pantry, recentMeals, status, reload } = useScheduleData(familyId, weekStart)
+
+  const from = dateStr(calendarGridStart(weekStart))
+  const to   = dateStr(calendarGridEnd(weekStart))
+  const { events, meals, pantry, recentMeals, status, reload } = useScheduleData(familyId, from, to)
+
+  function prevMonth() {
+    goToMonth(new Date(weekStart.getFullYear(), weekStart.getMonth() - 1, 8))
+  }
+  function nextMonth() {
+    goToMonth(new Date(weekStart.getFullYear(), weekStart.getMonth() + 1, 8))
+  }
   const { member, prefs, loadingPrefs, savePrefs } = useCurrentMember(familyId, members, memberId)
   const features = usePersonFeatures(prefs)
   const { sessions: trainingSessions } = useTrainingPlan(familyId, member?.name ?? null)
@@ -155,12 +165,7 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
 
   return (
     <>
-      <Header
-        weekStart={weekStart}
-        onPrev={() => changeWeek(-1)}
-        onNext={() => changeWeek(1)}
-        onSettings={() => setSettingsOpen(true)}
-      />
+      <Header onSettings={() => setSettingsOpen(true)} />
 
       <div className="legend">
         {members.map(m => (
@@ -173,12 +178,15 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
 
       <StatusBar ok={status.ok} message={status.message} />
 
-      <DayStrip
-        days={days}
+      <MonthCalendar
+        weekStart={weekStart}
         selectedDay={selectedDay}
         events={events}
         colorMap={colorMap}
-        onSelect={setSelectedDay}
+        onSelectDate={goToDate}
+        onPrevMonth={prevMonth}
+        onNextMonth={nextMonth}
+        onAddEvent={() => setEventModalDay(selectedDay)}
       />
 
       <DayPanel
@@ -186,7 +194,6 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
         selectedDay={selectedDay}
         events={events}
         colorMap={colorMap}
-        onAddEvent={setEventModalDay}
         onDeleteEvent={deleteEvent}
         onSwipe={swipeDay}
       />
@@ -229,7 +236,7 @@ function MainApp({ familyId, memberId, withingsResult }: { familyId: string; mem
           <TrainingTab familyId={familyId} member={member} prefs={prefs} />
         )}
         {tab === 'meals' && features.canUseNutritionAI && (
-          <MealsTab days={days} meals={meals}
+          <MealsTab meals={meals}
             onAdd={() => setMealModalOpen(true)}
             onDelete={deleteMeal}
             onRecipe={setRecipeMeal} />
